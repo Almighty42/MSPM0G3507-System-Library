@@ -1,0 +1,13 @@
+{
+    "configurations": [
+        {
+            "name": "Linux",
+            "includePath": [
+                "${workspaceFolder}/**",
+                "\"/home/software/Repositories/MSPM0G3507-System-Library/\""
+            ],
+            "defines": []
+        }
+    ],
+    "version": 4
+}
