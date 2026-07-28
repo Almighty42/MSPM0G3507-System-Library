@@ -230,7 +230,7 @@ void Reset_Handler(void)
 	// Initialize virtual tables, along executing init, init_array, constructors
 	// and preinit_array functions
 	//
-	__libc_init_array();
+	// __libc_init_array();
 
     //
     // Call the application's entry point.
@@ -255,7 +255,8 @@ void Default_Handler(void)
 }
 
 void SystemInit(void) {
-    // 0. FLASHWAIT state setup
+    // 0. FLASHWAIT state setup and Writelock unlocked
+    CLEAR_BIT(SYSCTL->WRITELOCK, 0);
     CLEAR_FIELD_2BIT(SYSCTL->MCLKCFG, SYSCTL_MCLKCFG_FLASHWAIT);
     SYSCTL->MCLKCFG |= (2U << SYSCTL_MCLKCFG_FLASHWAIT);
 
