@@ -1,0 +1,18 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "MSPM0G3507 Debug",
+            "cwd": "${workspaceFolder}",
+            "executable": "${workspaceFolder}/Testing/build/mspm0g3507_app.elf",
+            "request": "launch",
+            "type": "cortex-debug",
+            "servertype": "openocd",
+            "configFiles": ["${workspaceFolder}/openocd.cfg"],
+            "device": "MSPM0G350X",
+            "gdbPath": "/opt/gcc-arm-none-eabi/bin/arm-none-eabi-gdb",
+            "svdFile": "/home/software/.vscode/extensions/ti-development-tools.cortex-debug-dp-mspm0-1.0.2/data/MSPM0G350X.svd",
+            "postAttachCommands": ["monitor reset halt"]
+        }
+    ]
+}
