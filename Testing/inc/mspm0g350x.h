@@ -30,6 +30,13 @@
 #define CLEAR_FIELD_4BIT(reg, pos) ((reg) &= ~(0xF << (pos)))
 #define CLEAR_BYTE(reg, pos) ((reg) &= ~(0xFF << (pos)))
 
+#define WRITE_FIELD(reg, pos, width, val)                                    \
+    do {                                                                     \
+        uint32_t mask_ = (1UL << (width)) - 1UL;                             \
+        (reg) = ((reg) & ~(mask_ << (pos))) |                                \
+                (((uint32_t)(val) & mask_) << (pos));                        \
+    } while (0)
+
 #define WRITE_FIELD_2BIT(reg, pos, val) \
                                         do { \
                                         (reg) = ((reg) & ~(0x3U << (pos))) | (((uint32_t)(val) & 0x3U) << (pos)); \
@@ -229,7 +236,7 @@ typedef struct
     uint32_t res3;
     __R uint32_t MIS;
     uint32_t res4;
-    __W1S ISET;
+    __W1S uint32_t ISET;
     uint32_t res5;
     __W1C uint32_t ICLR;
     uint32_t res6;
@@ -332,6 +339,8 @@ typedef struct
 #define SYSCTL_SYSPLLCFG0_RDIVCLK0                  8
 #define SYSCTL_SYSPLLCFG0_RDIVCLK1                  12
 #define SYSCTL_SYSPLLCFG0_RDIVCLK2X                 16
+
+#define SYSCTL_SYSPLLCFG1_PDIV                      0
 
 #define SYSCTL_CLKSTATUS_SYSOSCFREQ                 0
 #define SYSCTL_CLKSTATUS_HSCLKMUX                   4

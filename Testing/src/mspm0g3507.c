@@ -241,8 +241,7 @@ void Reset_Handler(void)
 	// Initialize virtual tables, along executing init, init_array,
 	// constructors and preinit_array functions
 	//
-	// __libc_init_array();
-	systick_init_100ms();
+	// systick_init_100ms();
 
 	//
 	// Call the application's entry point.
