@@ -14,6 +14,7 @@ add_executable(${PROJECT_NAME}
     src/mspm0g3507.c
     src/system_init.c
     src/gpio.c
+    src/iomux.c
     src/main.c
 )
 
