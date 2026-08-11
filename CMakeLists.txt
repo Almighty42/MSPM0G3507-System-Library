@@ -12,9 +12,9 @@ set(LINKER_SCRIPT ${CMAKE_SOURCE_DIR}/mspm0g3507.ld)
 
 add_executable(${PROJECT_NAME}
     src/mspm0g350x_startup.c
-    src/system_init.c
-    src/gpio.c
-    src/iomux.c
+    src/mspm0g350x_system_init.c
+    src/mspm0g350x_gpio.c
+    src/mspm0g350x_iomux.c
     src/main.c
 )
 

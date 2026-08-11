@@ -1,7 +1,7 @@
 #include <stdint.h>
 #include "../inc/mspm0g350x_startup.h"
-#include "../inc/gpio.h"
-#include "../inc/iomux.h"
+#include "../inc/mspm0g350x_gpio.h"
+#include "../inc/mspm0g350x_iomux.h"
 
 void SysTick_Handler(void)
 {

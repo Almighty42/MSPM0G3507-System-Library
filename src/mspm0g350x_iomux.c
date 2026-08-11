@@ -1,5 +1,5 @@
 #include <stdint.h>
-#include "../inc/iomux.h"
+#include "../inc/mspm0g350x_iomux.h"
 #include "../inc/mspm0g350x_startup.h"
 
 /* PINCM bit positions — TRM SLAU846E, Section 8.3.1, Table 8-5 */

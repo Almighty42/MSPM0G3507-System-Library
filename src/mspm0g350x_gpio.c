@@ -1,5 +1,5 @@
 #include <stdint.h>
-#include "../inc/gpio.h"
+#include "../inc/mspm0g350x_gpio.h"
 #include "../inc/mspm0g350x_startup.h"
 
 #define GPIO_PWREN_KEY  0x26U
