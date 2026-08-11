@@ -30,6 +30,13 @@
 #define CLEAR_FIELD_4BIT(reg, pos) ((reg) &= ~(0xF << (pos)))
 #define CLEAR_BYTE(reg, pos) ((reg) &= ~(0xFF << (pos)))
 
+#define WRITE_FIELD(reg, pos, width, val)                                    \
+    do {                                                                     \
+        uint32_t mask_ = (1UL << (width)) - 1UL;                             \
+        (reg) = ((reg) & ~(mask_ << (pos))) |                                \
+                (((uint32_t)(val) & mask_) << (pos));                        \
+    } while (0)
+
 #define WRITE_FIELD_2BIT(reg, pos, val) \
                                         do { \
                                         (reg) = ((reg) & ~(0x3U << (pos))) | (((uint32_t)(val) & 0x3U) << (pos)); \
@@ -426,6 +433,32 @@ typedef struct
 #define SYSCTL_MCLKCFG_STOPCLKSTBY                  21
 #define SYSCTL_MCLKCFG_MCLKDEADCHK                  22
 
+#define SYSCTL_GENCLKCFG_EXCLKSRC                   0
+#define SYSCTL_GENCLKCFG_EXCLKDIVVAL                4
+#define SYSCTL_GENCLKCFG_EXCLKDIVEN                 7
+#define SYSCTL_GENCLKCFG_CANCLKSRC                  8
+#define SYSCTL_GENCLKCFG_MFPCLKSRC                  9
+#define SYSCTL_GENCLKCFG_HFCLK4MFPCLKDIV            12
+#define SYSCTL_GENCLKCFG_FCCSELCLK                  16
+#define SYSCTL_GENCLKCFG_FCCTRIGSRC                 20
+#define SYSCTL_GENCLKCFG_FCCLVLTRIG                 21
+#define SYSCTL_GENCLKCFG_ANACPUMPCFG                22
+#define SYSCTL_GENCLKCFG_FCCTRIGCNT                 24
+
+#define SYSCTL_HSCLKEN_HFXTEN                       0
+#define SYSCTL_HSCLKEN_SYSPLLEN                     8
+#define SYSCTL_HSCLKEN_USEEXTHFCLK                  16
+
+#define SYSCTL_HFCLKCLKCFG_HFXTTIME                 28
+#define SYSCTL_HFCLKCLKCFG_HFXTRSEL                 12
+#define SYSCTL_HFCLKCLKCFG_HFCLKFLTCHK              0
+
+#define SYSCTL_GENCLKEN_EXCLKEN                     0
+#define SYSCTL_GENCLKEN_MFPCLKEN                    4
+
+#define SYSCTL_GENCLKCFG_EXCLKSRC_MASK              (0x7UL << SYSCTL_GENCLKCFG_EXCLKSRC)
+#define SYSCTL_GENCLKCFG_EXCLKSRC_SYSOSC            (0x0UL)
+
 #define SYSCTL_HSCLKCFG_HSCLKSEL                    0
 
 #define SYSCTL_SYSPLLPARAM0_STARTTIME               0
@@ -437,10 +470,6 @@ typedef struct
 #define SYSCTL_SYSPLLPARAM1_LPFCAPA                 0
 #define SYSCTL_SYSPLLPARAM1_LPFRESA                 8
 #define SYSCTL_SYSPLLPARAM1_LPFRESC                 24
-
-#define SYSCTL_HSCLKEN_HFXTEN                       0
-#define SYSCTL_HSCLKEN_SYSPLLEN                     8
-#define SYSCTL_HSCLKEN_USEEXTHFCLK                  16
 
 #define SYSCTL_SYSPLLCFG1_PDIV                      0
 #define SYSCTL_SYSPLLCFG1_QDIV                      8
@@ -526,3 +555,4 @@ DMA_INT_IRQn = 31,/* 47 DMA_INT Interrupt */
 } IRQn_Type;
 
 #endif
+

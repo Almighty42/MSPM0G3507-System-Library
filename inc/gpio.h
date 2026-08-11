@@ -1,5 +1,5 @@
 #include <stdint.h>
-#include "mspm0g350x.h"
+#include "mspm0g350x_startup.h"
 
 #define DIO0                        0
 #define DIO1                        1

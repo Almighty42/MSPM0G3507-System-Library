@@ -1,6 +1,6 @@
 #include <stdint.h>
 #include "../inc/iomux.h"
-#include "../inc/mspm0g350x.h"
+#include "../inc/mspm0g350x_startup.h"
 
 /* PINCM bit positions — TRM SLAU846E, Section 8.3.1, Table 8-5 */
 #define IOMUX_PINCM_PF_POS      0   /* bits 5:0 */

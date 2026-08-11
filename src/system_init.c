@@ -1,4 +1,4 @@
-#include "../inc/mspm0g350x.h"
+#include "../inc/mspm0g350x_startup.h"
 #include "../inc/mspm0g350x_clock_configuration.h"
 #include <stdint.h>
 
@@ -11,29 +11,40 @@ void SystemInit(void)
 	// is unsafe if MCLK is already running fast from a prior session).
 	WRITE_FIELD_4BIT(SYSCTL->MCLKCFG, SYSCTL_MCLKCFG_FLASHWAIT,
 	                 MSPM0_FLASHWAIT_VALUE);
+	
+	#if MSPM0_SYSPLL_REF_SEL == SYSPLLREF_SEL_HFCLK
 
-	// 2. Confirm SYSOSC is running at its base frequency (32MHz)
-	// SYSPLL requires this regardless of which reference clock feeds it.
-	if (IS_BIT_SET(SYSCTL->CLKSTATUS, SYSCTL_CLKSTATUS_SYSOSCFREQ)) {
-		return;
-	}
+	// Configure HFCLK to use the crystal oscillator, not HFCLK_IN
+	CLEAR_BIT(SYSCTL->HSCLKEN, SYSCTL_HSCLKEN_USEEXTHFCLK);
+	WRITE_FIELD(SYSCTL->HFCLKCLKCFG, SYSCTL_HFCLKCLKCFG_HFXTRSEL, 2, MSPM0_HFXTRSEL_RANGE);
 
-	// 3. Select SYSOSC as the SYSPLL reference (default state)
-	if (MSPM0_SYSPLL_REF_SEL) {
-		SET_BIT(SYSCTL->SYSPLLCFG0, SYSCTL_SYSPLLCFG0_SYSPLLREF);
-	}
-	else {
-		CLEAR_BIT(SYSCTL->SYSPLLCFG0, SYSCTL_SYSPLLCFG0_SYSPLLREF);
-	}
+	// Set HFXT startup time
+	WRITE_FIELD(SYSCTL->HFCLKCLKCFG, SYSCTL_HFCLKCLKCFG_HFXTTIME, 8U, MSP0_HFXTTIME_MAX);
 
-	// 4. Predivider PDIV = /2 -> fLOOPIN = 32MHz / 2 = 16MHz
+	// Enable HFCLK startup monitor
+	SET_BIT(SYSCTL->HFCLKCLKCFG, SYSCTL_HFCLKCLKCFG_HFCLKFLTCHK);
+
+	// Enable the HFXT oscillator
+	SET_BIT(SYSCTL->HSCLKEN, SYSCTL_HSCLKEN_HFXTEN);
+
+	// Wait until HFCLK is stable
+	while(!IS_BIT_SET(SYSCTL->CLKSTATUS, SYSCTL_CLKSTATUS_HFCLKGOOD)) {}
+
+	SET_BIT(SYSCTL->SYSPLLCFG0, SYSCTL_SYSPLLCFG0_SYSPLLREF);
+
+	#elif MSPM0_SYSPLL_REF_SEL == SYSPLLREF_SEL_SYSOSC
+
+	CLEAR_BIT(SYSCTL->SYSPLLCFG0, SYSCTL_SYSPLLCFG0_SYSPLLREF);
+
+	#else
+	#error "Unsupported MSPM0_SYSPLL_REF_SEL"
+	#endif
+
+	// 4. Predivider PDIV
 	WRITE_FIELD_2BIT(SYSCTL->SYSPLLCFG1, SYSCTL_SYSPLLCFG1_PDIV,
 	                 MSPM0_SYSPLL_PDIV);
 
-	// 5. Load PLL loop-filter parameters for fLOOPIN = 16MHz bucket
-	// TODO(verify): confirm these two source addresses against the TRM's
-	// SYSPLL parameter table / NONMAIN factory config region - do not trust
-	// blindly, especially after the earlier board-independent reset bug.
+	// 5. Load PLL loop-filter parameters for fLOOPIN
 	SYSCTL->SYSPLLPARAM0 = HWREGW(MSPM0_SYSPLLPARAM0_ADDR);
 	SYSCTL->SYSPLLPARAM1 = HWREGW(MSPM0_SYSPLLPARAM1_ADDR);
 
@@ -48,44 +59,35 @@ void SystemInit(void)
 	                 MSPM0_SYSPLL_RDIVCLK2X);
 
 	// 8. Enable SYSPLLCLK1 and SYSPLLCLK2X outputs
-	if (MSPM0_SYSPLL_ENABLE_CLK1) {
+	#if MSPM0_SYSPLL_ENABLE_CLK1 == ENABLE
 		SET_BIT(SYSCTL->SYSPLLCFG0, SYSCTL_SYSPLLCFG0_ENABLECLK1);
-	}
-	else {
+	#else
 		CLEAR_BIT(SYSCTL->SYSPLLCFG0, SYSCTL_SYSPLLCFG0_ENABLECLK1);
-	}
+	#endif
 
-	if (MSPM0_SYSPLL_ENABLE_CLK2X) {
+	#if MSPM0_SYSPLL_ENABLE_CLK2X == ENABLE
 		SET_BIT(SYSCTL->SYSPLLCFG0, SYSCTL_SYSPLLCFG0_ENABLECLK2X);
-	}
-	else {
+	#else
 		CLEAR_BIT(SYSCTL->SYSPLLCFG0, SYSCTL_SYSPLLCFG0_ENABLECLK2X);
-	}
+	#endif
 
 	// 9. Route SYSPLLCLK2X (80MHz) into the HSCLK mux
-	// TODO(verify): confirm MCLK2XVCO is sufficient on its own to select
-	// the
-	// 2x tap, or whether a separate HSCLK mux-select field is also required
-	// — this is the prime suspect for the measured 40MHz-instead-of-80MHz
-	// bug.
-	if (MSPM0_HSCLK_USE_MCLK2XVCO) {
+	#if MSPM0_HSCLK_USE_MCLK2XVCO == ENABLE
 		SET_BIT(SYSCTL->SYSPLLCFG0, SYSCTL_SYSPLLCFG0_MCLK2XVCO);
-	}
-	else {
+	#else
 		CLEAR_BIT(SYSCTL->SYSPLLCFG0, SYSCTL_SYSPLLCFG0_MCLK2XVCO);
-	}
+	#endif
 
 	// 10. Enable SYSPLL
-	if (MSPM0_SYSPLL_STATE) {
+	#if MSPM0_SYSPLL_STATE == ENABLE
 		SET_BIT(SYSCTL->HSCLKEN, SYSCTL_HSCLKEN_SYSPLLEN);
-	}
-	else {
+		while (!IS_BIT_SET(SYSCTL->CLKSTATUS, SYSCTL_CLKSTATUS_SYSPLLGOOD)) {
+		}
+	#else
 		CLEAR_BIT(SYSCTL->HSCLKEN, SYSCTL_HSCLKEN_SYSPLLEN);
-	}
+	#endif
 
 	// 11. Wait for SYSPLLGOOD (poll, do not blind-delay)
-	while (!IS_BIT_SET(SYSCTL->CLKSTATUS, SYSCTL_CLKSTATUS_SYSPLLGOOD)) {
-	}
 
 	// 12. Select SYSPLL as the HSCLK source (default state)
 	CLEAR_BIT(SYSCTL->HSCLKCFG, SYSCTL_HSCLKCFG_HSCLKSEL);
