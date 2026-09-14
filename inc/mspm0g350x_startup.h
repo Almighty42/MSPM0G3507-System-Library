@@ -345,6 +345,82 @@ typedef struct {
 } IOMUX_Type;
 #define IOMUX ((IOMUX_Type*)IOMUX_BASE_ADDR)
 
+typedef struct {
+    // 800h
+    __RW uint32_t PWREN;
+    __W uint32_t RSTCTL;
+    __RW uint32_t CLKCFG;
+    uint32_t res0[2];
+    __R uint32_t STAT0;
+    uint32_t res1[506];
+    __RW uint32_t CLKDIV;
+    uint32_t res2[1];
+    __RW uint32_t CLKSEL;
+    uint32_t res3[3];
+    __RW uint32_t PDBGCTL;
+    uint32_t res4[1];
+    __R uint32_t IIDX0;
+    uint32_t res5[1];
+    __RW uint32_t IMASK0;
+    uint32_t res6[1];
+    __R uint32_t RIS0;
+    uint32_t res7[1];
+    __R uint32_t MIS0;
+    uint32_t res8[1];
+    __W uint32_t ISET0;
+    uint32_t res9[1];
+    __W uint32_t ICLR0;
+    uint32_t res10[1];
+    __R uint32_t IIDX1;
+    uint32_t res11[1];
+    __RW uint32_t IMASK1;
+    uint32_t res12[1];
+    __R uint32_t RIS1;
+    uint32_t res13[1];
+    __R uint32_t MIS1;
+    uint32_t res14[1];
+    __W uint32_t ISET1;
+    uint32_t res15[1];
+    __W uint32_t ICLR1;
+    uint32_t res16[1];
+    __R uint32_t IIDX2;
+    uint32_t res17[1];
+    __RW uint32_t IMASK2;
+    uint32_t res18[1];
+    __R uint32_t RIS2;
+    uint32_t res19[1];
+    __R uint32_t MIS2;
+    uint32_t res20[1];
+    __W uint32_t ISET2;
+    uint32_t res21[1];
+    __W uint32_t ICLR2;
+    uint32_t res22[13];
+    __R uint32_t EVT_MODE;
+    __W uint32_t INTCTL;
+    uint32_t res23[6];
+    __RW uint32_t CTL0;
+    __RW uint32_t LCRH;
+    __R uint32_t STAT1;
+    __RW uint32_t IFLS;
+    __RW uint32_t IBRD;
+    __RW uint32_t FBRD;
+    __RW uint32_t GFCTL;
+    uint32_t res24[1];
+    __RW uint32_t TXDATA;
+    __R uint32_t RXDATA;
+    uint32_t res25[2];
+    __RW uint32_t LINCNT;
+    __RW uint32_t LINCTL;
+    __RW uint32_t LINC0;
+    __RW uint32_t LINC1;
+    __RW uint32_t IRCTL;
+    uint32_t res26[1];
+    __RW uint32_t AMASK;
+    __RW uint32_t ADDR;
+    uint32_t res27[4];
+    __RW uint32_t CLKDIV2;
+} UART_Type;
+
 // NOTE: --- Other Peripheral TypeDefs ---
 
 typedef struct
