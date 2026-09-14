@@ -18,6 +18,8 @@ add_executable(${PROJECT_NAME}
     src/main.c
 )
 
+set_target_properties(${PROJECT_NAME} PROPERTIES SUFFIX ".elf")
+
 target_include_directories(${PROJECT_NAME} PRIVATE
     ${CMAKE_SOURCE_DIR}/inc
 )

@@ -556,6 +556,6 @@ typedef enum
 #define IOMUX_STATE_DISABLE         0
 #define IOMUX_STATE_ENABLE          1
 
-iomux_status_t iomux_configure_pin(const iomux_pin_config_t *cfg);
+void iomux_configure_pin(const iomux_pin_config_t *cfg);
 
 #endif

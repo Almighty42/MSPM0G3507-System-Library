@@ -2,17 +2,23 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "name": "MSPM0G3507 Debug",
-            "cwd": "${workspaceFolder}",
-            "executable": "${workspaceFolder}/Testing/build/mspm0g3507_app.elf",
-            "request": "launch",
+            "name": "MSPM0G3507: XDS110/OpenOCD",
             "type": "cortex-debug",
+            "request": "launch",
+            "cwd": "${workspaceFolder}",
+            "executable": "${command:cmake.launchTargetPath}",
             "servertype": "openocd",
-            "configFiles": ["${workspaceFolder}/openocd.cfg"],
-            "device": "MSPM0G350X",
-            "gdbPath": "/opt/gcc-arm-none-eabi/bin/arm-none-eabi-gdb",
-            "svdFile": "/home/software/.vscode/extensions/ti-development-tools.cortex-debug-dp-mspm0-1.0.2/data/MSPM0G350X.svd",
-            "postAttachCommands": ["monitor reset halt"]
+            "configFiles": [
+                "interface/cmsis-dap.cfg",
+                "board/ti_mspm0_launchpad.cfg"
+            ],
+            "searchDir": [
+                "/usr/local/share/openocd/scripts"
+            ],
+            "deviceName": "MSPM0G3507",
+            "interface": "swd",
+            "runToEntryPoint": "main",
+            "showDevDebugOutput": "raw"
         }
     ]
 }
