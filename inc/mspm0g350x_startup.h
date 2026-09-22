@@ -6,12 +6,12 @@
 
 // NOTE: --- Utility macros ---
 
-#define __R volatile const      // Read only
-#define __W volatile            // Write only
-#define __RW volatile           // Read / Write
-#define __RC volatile           // Read to Clear
-#define __W1C volatile          // Write 1 to Clear
-#define __W1S volatile          // Write 1 to Clear
+#define __R volatile const // Read only
+#define __W volatile       // Write only
+#define __RW volatile      // Read / Write
+#define __RC volatile      // Read to Clear
+#define __W1C volatile     // Write 1 to Clear
+#define __W1S volatile     // Write 1 to Clear
 
 #define ENABLE 1
 #define DISABLE 0
@@ -30,84 +30,86 @@
 #define CLEAR_FIELD_4BIT(reg, pos) ((reg) &= ~(0xF << (pos)))
 #define CLEAR_BYTE(reg, pos) ((reg) &= ~(0xFF << (pos)))
 
-#define WRITE_FIELD(reg, pos, width, val)                                    \
-    do {                                                                     \
-        uint32_t mask_ = (1UL << (width)) - 1UL;                             \
-        (reg) = ((reg) & ~(mask_ << (pos))) |                                \
-                (((uint32_t)(val) & mask_) << (pos));                        \
-    } while (0)
+#define WRITE_FIELD(reg, pos, width, val)                                      \
+	do {                                                                   \
+		uint32_t mask_ = (1UL << (width)) - 1UL;                       \
+		(reg) = ((reg) & ~(mask_ << (pos))) |                          \
+		        (((uint32_t)(val) & mask_) << (pos));                  \
+	} while (0)
 
-#define WRITE_FIELD_2BIT(reg, pos, val) \
-                                        do { \
-                                        (reg) = ((reg) & ~(0x3U << (pos))) | (((uint32_t)(val) & 0x3U) << (pos)); \
-                                        } while (0)
+#define WRITE_FIELD_2BIT(reg, pos, val)                                        \
+	do {                                                                   \
+		(reg) = ((reg) & ~(0x3U << (pos))) |                           \
+		        (((uint32_t)(val) & 0x3U) << (pos));                   \
+	} while (0)
 
-#define WRITE_FIELD_4BIT(reg, pos, val) \
-                                        do { \
-                                        (reg) = ((reg) & ~(0xFU << (pos))) | (((uint32_t)(val) & 0xFU) << (pos)); \
-                                        } while (0)
+#define WRITE_FIELD_4BIT(reg, pos, val)                                        \
+	do {                                                                   \
+		(reg) = ((reg) & ~(0xFU << (pos))) |                           \
+		        (((uint32_t)(val) & 0xFU) << (pos));                   \
+	} while (0)
 
 #define SET_BIT(reg, bit) ((reg) |= (1UL << (bit)))
 #define SET_BITS_BY_VAR(reg, val) ((reg) |= (val))
-#define SET_BYTE(reg, byte_pos, val)                                \
-                                                                    do {    \
-                                                                    CLEAR_BYTE((reg), (byte_pos)); \
-                                                                    (reg) |= (((uint32_t)(val) & 0xFFU) << (byte_pos)); \
-                                                                    } while (0)
+#define SET_BYTE(reg, byte_pos, val)                                           \
+	do {                                                                   \
+		CLEAR_BYTE((reg), (byte_pos));                                 \
+		(reg) |= (((uint32_t)(val) & 0xFFU) << (byte_pos));            \
+	} while (0)
 #define TOGGLE_BIT(reg, bit) ((reg) ^= (1UL << (bit)))
 
 // NOTE: --- Validation macros ---
 
-#define VALIDATE_RANGE(val, min, max, err_code)                      \
-                                                                    do { \
-                                                                    if ((val) < (min) || (val) > (max)) {  \
-                                                                    return (err_code); \
-}                                                              \
-} while (0)
+#define VALIDATE_RANGE(val, min, max, err_code)                                \
+	do {                                                                   \
+		if ((val) < (min) || (val) > (max)) {                          \
+			return (err_code);                                     \
+		}                                                              \
+	} while (0)
 
 #define VALIDATE_PTR(ptr, err_code)                                            \
-do {                                                                   \
-if ((ptr) == NULL) {                                           \
-return (err_code);                                     \
-}                                                              \
-} while (0)
+	do {                                                                   \
+		if ((ptr) == NULL) {                                           \
+			return (err_code);                                     \
+		}                                                              \
+	} while (0)
 
 #define VALIDATE_EN_DI(EN_or_DI, err_code)                                     \
-do {                                                                   \
-if ((EN_or_DI) != ENABLE && (EN_or_DI) != DISABLE) {           \
-return (err_code);                                     \
-}                                                              \
-} while (0)
+	do {                                                                   \
+		if ((EN_or_DI) != ENABLE && (EN_or_DI) != DISABLE) {           \
+			return (err_code);                                     \
+		}                                                              \
+	} while (0)
 
 #define VALIDATE_BIT_SET(reg, bit, err_code)                                   \
-do {                                                                   \
-if (!IS_BIT_SET((reg), (bit))) {                               \
-return (err_code);                                     \
-}                                                              \
-} while (0)
+	do {                                                                   \
+		if (!IS_BIT_SET((reg), (bit))) {                               \
+			return (err_code);                                     \
+		}                                                              \
+	} while (0)
 
 #define VALIDATE_ENUM(val, max_val, err_code)                                  \
-do {                                                                   \
-if ((val) > (max_val)) {                                       \
-return (err_code);                                     \
-}                                                              \
-} while (0)
+	do {                                                                   \
+		if ((val) > (max_val)) {                                       \
+			return (err_code);                                     \
+		}                                                              \
+	} while (0)
 
 #define VALIDATE_IN_RANGE(val, range, len, err_code)                           \
-do {                                                                   \
-uint8_t found = 0;                                             \
-for (uint32_t i = 0; i < len; i++) {                           \
-if ((val) == (range)[i]) {                             \
-found = 1;                                     \
-break;                                         \
-}                                                      \
-}                                                              \
-if (!found)                                                    \
-return (err_code);                                     \
-} while (0)
+	do {                                                                   \
+		uint8_t found = 0;                                             \
+		for (uint32_t i = 0; i < len; i++) {                           \
+			if ((val) == (range)[i]) {                             \
+				found = 1;                                     \
+				break;                                         \
+			}                                                      \
+		}                                                              \
+		if (!found)                                                    \
+			return (err_code);                                     \
+	} while (0)
 
 #define VALIDATE_IRQ_NUMBER(irq, err_code)                                     \
-VALIDATE_RANGE((irq), 0U, 83U, err_code)
+	VALIDATE_RANGE((irq), 0U, 83U, err_code)
 
 // NOTE: --- Base Addresses --
 
@@ -176,412 +178,573 @@ VALIDATE_RANGE((irq), 0U, 83U, err_code)
 
 typedef struct
 {
-__RW uint32_t CSR;
-__RW uint32_t RVR;
-__RW uint32_t CVR;
-__R uint32_t CALIB;
+	__RW uint32_t CSR;
+	__RW uint32_t RVR;
+	__RW uint32_t CVR;
+	__R uint32_t CALIB;
 } SysTick_Type;
 #define SysTick ((SysTick_Type*)SYSTICK_BASE_ADDR)
 
 typedef struct
 {
-__RW uint32_t ISER;
-uint32_t res0[31];
-__RW uint32_t ICER;
-uint32_t res1[31];
-__RW uint32_t ISPR;
-uint32_t res2[31];
-__RW uint32_t ICPR;
-uint32_t res3[31];
-uint32_t res4[64];
-__RW uint32_t IPR[8];
+	__RW uint32_t ISER;
+	uint32_t res0[31];
+	__RW uint32_t ICER;
+	uint32_t res1[31];
+	__RW uint32_t ISPR;
+	uint32_t res2[31];
+	__RW uint32_t ICPR;
+	uint32_t res3[31];
+	uint32_t res4[64];
+	__RW uint32_t IPR[8];
 
 } NVIC_Type;
 #define NVIC ((NVIC_Type*)NVIC_BASE_ADDR)
 
 typedef struct
 {
-__R uint32_t CPUID;
-__RW uint32_t ICSR;
-__RW uint32_t VTOR;
-__RW uint32_t AIRCR;
-__RW uint32_t SCR;
-__R uint32_t CCR;
-uint32_t res0;
-__RW uint32_t SHPR2;
-__RW uint32_t SHPR3;
+	__R uint32_t CPUID;
+	__RW uint32_t ICSR;
+	__RW uint32_t VTOR;
+	__RW uint32_t AIRCR;
+	__RW uint32_t SCR;
+	__R uint32_t CCR;
+	uint32_t res0;
+	__RW uint32_t SHPR2;
+	__RW uint32_t SHPR3;
 } SCB_Type;
 #define SCB ((SCB_Type*)SCB_BASE_ADDR)
 
 typedef struct
 {
-__R uint32_t MPU_TYPE;
-__RW uint32_t MPU_CTRL;
-__RW uint32_t MPU_RNR;
-__RW uint32_t MPU_RBAR;
-__RW uint32_t MPU_RASR;
+	__R uint32_t MPU_TYPE;
+	__RW uint32_t MPU_CTRL;
+	__RW uint32_t MPU_RNR;
+	__RW uint32_t MPU_RBAR;
+	__RW uint32_t MPU_RASR;
 } MPU_Type;
 #define MPU ((MPU_Type*)MPU_BASE_ADDR)
 
 typedef struct
 {
-    uint32_t res0[256];
-    __RW uint32_t FSUB_0;
-    __RW uint32_t FSUB_1;
-    uint32_t res1[15];
-    __RW uint32_t FPUB_0;
-    __RW uint32_t FPUB_1;
-    uint32_t res2[237];
-    __W uint32_t PWREN;
-    __W uint32_t RSTCTL;
-    uint32_t res3[3];
-    __R uint32_t STAT;
-    uint32_t res4[510];
-    __RW uint32_t CLKOVR;
-    uint32_t res5;
-    __RW uint32_t PDBGCTL;
-    uint32_t res6;
-    __R uint32_t IIDX0;
-    uint32_t res7;
-    __RW uint32_t IMASK0;
-    uint32_t res8;
-    __R uint32_t RIS0;
-    uint32_t res9;
-    __R uint32_t MIS0;
-    uint32_t res10;
-    __W uint32_t ISET0;
-    uint32_t res11;
-    __W uint32_t ICLR0;
-    uint32_t res12;
-    __R uint32_t IIDX1;
-    uint32_t res13;
-    __RW uint32_t IMASK1;
-    uint32_t res14;
-    __R uint32_t RIS1;
-    uint32_t res15;
-    __R uint32_t MIS1;
-    uint32_t res16;
-    __W uint32_t ISET1;
-    uint32_t res17;
-    __W uint32_t ICLR1;
-    uint32_t res18;
-    __R uint32_t IIDX2;
-    uint32_t res19;
-    __RW uint32_t IMASK2;
-    uint32_t res20;
-    __R uint32_t RIS2;
-    uint32_t res21;
-    __R uint32_t MIS2;
-    uint32_t res22;
-    __W uint32_t ISET2;
-    uint32_t res23;
-    __W uint32_t ICLR2;
-    uint32_t res24[13];
-    __R uint32_t EVT_MODE;
-    uint32_t res25[6];
-    __R uint32_t DESC;
-    uint32_t res26[64];
-    __W uint32_t DOUT3_0;
-    __W uint32_t DOUT7_4;
-    __W uint32_t DOUT11_8;
-    __W uint32_t DOUT15_12;
-    __W uint32_t DOUT19_16;
-    __W uint32_t DOUT23_20;
-    __W uint32_t DOUT27_24;
-    __W uint32_t DOUT31_28;
-    uint32_t res27[24];
-    __RW uint32_t DOUT31_0;
-    uint32_t res28[3];
-    __W uint32_t DOUTSET31_0;
-    uint32_t res29[3];
-    __W uint32_t DOUTCLR31_0;
-    uint32_t res30[3];
-    __W uint32_t DOUTTGL31_0;
-    uint32_t res31[3];
-    __RW uint32_t DOE31_0;
-    uint32_t res32[3];
-    __RW uint32_t DOESET31_0;
-    uint32_t res33[3];
-    __W uint32_t DOECLR31_0;
-    uint32_t res34[7];
-    __R uint32_t DIN3_0;
-    __R uint32_t DIN7_4;
-    __R uint32_t DIN11_8;
-    __R uint32_t DIN15_12;
-    __R uint32_t DIN19_16;
-    __R uint32_t DIN23_20;
-    __R uint32_t DIN27_24;
-    __R uint32_t DIN31_28;
-    uint32_t res35[24];
-    __R uint32_t DIN31_0;
-    uint32_t res36[3];
-    __RW uint32_t POLARITY15_0;
-    uint32_t res37[3];
-    __RW uint32_t POLARITY31_16;
-    uint32_t res38[23];
-    __RW uint32_t CTL;
-    __RW uint32_t FASTWAKE;
-    uint32_t res39[62];
-    __RW uint32_t SUB0CFG;
-    uint32_t res40;
-    __RW uint32_t FILTEREN15_0;
-    uint32_t res41;
-    __RW uint32_t FILTEREN31_16;
-    uint32_t res42;
-    __RW uint32_t DMAMASK;
-    uint32_t res43[3];
-    __RW uint32_t SUB1CFG;
+	uint32_t res0[256];
+	__RW uint32_t FSUB_0;
+	__RW uint32_t FSUB_1;
+	uint32_t res1[15];
+	__RW uint32_t FPUB_0;
+	__RW uint32_t FPUB_1;
+	uint32_t res2[237];
+	__W uint32_t PWREN;
+	__W uint32_t RSTCTL;
+	uint32_t res3[3];
+	__R uint32_t STAT;
+	uint32_t res4[510];
+	__RW uint32_t CLKOVR;
+	uint32_t res5;
+	__RW uint32_t PDBGCTL;
+	uint32_t res6;
+	__R uint32_t IIDX0;
+	uint32_t res7;
+	__RW uint32_t IMASK0;
+	uint32_t res8;
+	__R uint32_t RIS0;
+	uint32_t res9;
+	__R uint32_t MIS0;
+	uint32_t res10;
+	__W uint32_t ISET0;
+	uint32_t res11;
+	__W uint32_t ICLR0;
+	uint32_t res12;
+	__R uint32_t IIDX1;
+	uint32_t res13;
+	__RW uint32_t IMASK1;
+	uint32_t res14;
+	__R uint32_t RIS1;
+	uint32_t res15;
+	__R uint32_t MIS1;
+	uint32_t res16;
+	__W uint32_t ISET1;
+	uint32_t res17;
+	__W uint32_t ICLR1;
+	uint32_t res18;
+	__R uint32_t IIDX2;
+	uint32_t res19;
+	__RW uint32_t IMASK2;
+	uint32_t res20;
+	__R uint32_t RIS2;
+	uint32_t res21;
+	__R uint32_t MIS2;
+	uint32_t res22;
+	__W uint32_t ISET2;
+	uint32_t res23;
+	__W uint32_t ICLR2;
+	uint32_t res24[13];
+	__R uint32_t EVT_MODE;
+	uint32_t res25[6];
+	__R uint32_t DESC;
+	uint32_t res26[64];
+	__W uint32_t DOUT3_0;
+	__W uint32_t DOUT7_4;
+	__W uint32_t DOUT11_8;
+	__W uint32_t DOUT15_12;
+	__W uint32_t DOUT19_16;
+	__W uint32_t DOUT23_20;
+	__W uint32_t DOUT27_24;
+	__W uint32_t DOUT31_28;
+	uint32_t res27[24];
+	__RW uint32_t DOUT31_0;
+	uint32_t res28[3];
+	__W uint32_t DOUTSET31_0;
+	uint32_t res29[3];
+	__W uint32_t DOUTCLR31_0;
+	uint32_t res30[3];
+	__W uint32_t DOUTTGL31_0;
+	uint32_t res31[3];
+	__RW uint32_t DOE31_0;
+	uint32_t res32[3];
+	__RW uint32_t DOESET31_0;
+	uint32_t res33[3];
+	__W uint32_t DOECLR31_0;
+	uint32_t res34[7];
+	__R uint32_t DIN3_0;
+	__R uint32_t DIN7_4;
+	__R uint32_t DIN11_8;
+	__R uint32_t DIN15_12;
+	__R uint32_t DIN19_16;
+	__R uint32_t DIN23_20;
+	__R uint32_t DIN27_24;
+	__R uint32_t DIN31_28;
+	uint32_t res35[24];
+	__R uint32_t DIN31_0;
+	uint32_t res36[3];
+	__RW uint32_t POLARITY15_0;
+	uint32_t res37[3];
+	__RW uint32_t POLARITY31_16;
+	uint32_t res38[23];
+	__RW uint32_t CTL;
+	__RW uint32_t FASTWAKE;
+	uint32_t res39[62];
+	__RW uint32_t SUB0CFG;
+	uint32_t res40;
+	__RW uint32_t FILTEREN15_0;
+	uint32_t res41;
+	__RW uint32_t FILTEREN31_16;
+	uint32_t res42;
+	__RW uint32_t DMAMASK;
+	uint32_t res43[3];
+	__RW uint32_t SUB1CFG;
 } gpio_type;
 #define GPIO0 ((gpio_type*)GPIO0_BASE_ADDR)
 #define GPIO1 ((gpio_type*)GPIO1_BASE_ADDR)
 
-typedef struct {
-    uint32_t res0;
-    __RW uint32_t PINCM[60];
+typedef struct
+{
+	uint32_t res0;
+	__RW uint32_t PINCM[60];
 } IOMUX_SECCFG_Type;
 
-typedef struct {
-    IOMUX_SECCFG_Type SECCFG;
+typedef struct
+{
+	IOMUX_SECCFG_Type SECCFG;
 } IOMUX_Type;
 #define IOMUX ((IOMUX_Type*)IOMUX_BASE_ADDR)
 
-typedef struct {
-    // 800h
+typedef struct
+{
+	__RW uint32_t PWREN;
+	__W uint32_t RSTCTL;
+	__RW uint32_t CLKCFG;
+	uint32_t res0[2];
+	__R uint32_t STAT0;
+	uint32_t res1[506];
+	__RW uint32_t CLKDIV;
+	uint32_t res2[1];
+	__RW uint32_t CLKSEL;
+	uint32_t res3[3];
+	__RW uint32_t PDBGCTL;
+	uint32_t res4[1];
+	__R uint32_t IIDX0;
+	uint32_t res5[1];
+	__RW uint32_t IMASK0;
+	uint32_t res6[1];
+	__R uint32_t RIS0;
+	uint32_t res7[1];
+	__R uint32_t MIS0;
+	uint32_t res8[1];
+	__W uint32_t ISET0;
+	uint32_t res9[1];
+	__W uint32_t ICLR0;
+	uint32_t res10[1];
+	__R uint32_t IIDX1;
+	uint32_t res11[1];
+	__RW uint32_t IMASK1;
+	uint32_t res12[1];
+	__R uint32_t RIS1;
+	uint32_t res13[1];
+	__R uint32_t MIS1;
+	uint32_t res14[1];
+	__W uint32_t ISET1;
+	uint32_t res15[1];
+	__W uint32_t ICLR1;
+	uint32_t res16[1];
+	__R uint32_t IIDX2;
+	uint32_t res17[1];
+	__RW uint32_t IMASK2;
+	uint32_t res18[1];
+	__R uint32_t RIS2;
+	uint32_t res19[1];
+	__R uint32_t MIS2;
+	uint32_t res20[1];
+	__W uint32_t ISET2;
+	uint32_t res21[1];
+	__W uint32_t ICLR2;
+	uint32_t res22[13];
+	__R uint32_t EVT_MODE;
+	__W uint32_t INTCTL;
+	uint32_t res23[6];
+	__RW uint32_t CTL0;
+	__RW uint32_t LCRH;
+	__R uint32_t STAT1;
+	__RW uint32_t IFLS;
+	__RW uint32_t IBRD;
+	__RW uint32_t FBRD;
+	__RW uint32_t GFCTL;
+	uint32_t res24[1];
+	__RW uint32_t TXDATA;
+	__R uint32_t RXDATA;
+	uint32_t res25[2];
+	__RW uint32_t LINCNT;
+	__RW uint32_t LINCTL;
+	__RW uint32_t LINC0;
+	__RW uint32_t LINC1;
+	__RW uint32_t IRCTL;
+	uint32_t res26[1];
+	__RW uint32_t AMASK;
+	__RW uint32_t ADDR;
+	uint32_t res27[4];
+	__RW uint32_t CLKDIV2;
+} uart_type;
+
+#define UART0	((uart_type *)UART0_BASE_ADDR)
+#define UART1	((uart_type *)UART1_BASE_ADDR)
+#define UART2	((uart_type *)UART2_BASE_ADDR)
+#define UART3	((uart_type *)UART3_BASE_ADDR)
+
+typedef struct
+{
     __RW uint32_t PWREN;
-    __W uint32_t RSTCTL;
+    __W  uint32_t RSTCTL;
     __RW uint32_t CLKCFG;
     uint32_t res0[2];
-    __R uint32_t STAT0;
+    __R  uint32_t STAT0;
     uint32_t res1[506];
     __RW uint32_t CLKDIV;
-    uint32_t res2[1];
     __RW uint32_t CLKSEL;
-    uint32_t res3[3];
+    uint32_t res2[4];
     __RW uint32_t PDBGCTL;
+    uint32_t res3[1];
+    __R  uint32_t IIDX0;
     uint32_t res4[1];
-    __R uint32_t IIDX0;
-    uint32_t res5[1];
     __RW uint32_t IMASK0;
+    uint32_t res5[1];
+    __R  uint32_t RIS0;
     uint32_t res6[1];
-    __R uint32_t RIS0;
+    __R  uint32_t MIS0;
     uint32_t res7[1];
-    __R uint32_t MIS0;
+    __W  uint32_t ISET0;
     uint32_t res8[1];
-    __W uint32_t ISET0;
+    __W  uint32_t ICLR0;
     uint32_t res9[1];
-    __W uint32_t ICLR0;
+    __R  uint32_t IIDX1;
     uint32_t res10[1];
-    __R uint32_t IIDX1;
-    uint32_t res11[1];
     __RW uint32_t IMASK1;
+    uint32_t res11[1];
+    __R  uint32_t RIS1;
     uint32_t res12[1];
-    __R uint32_t RIS1;
+    __R  uint32_t MIS1;
     uint32_t res13[1];
-    __R uint32_t MIS1;
+    __W  uint32_t ISET1;
     uint32_t res14[1];
-    __W uint32_t ISET1;
+    __W  uint32_t ICLR1;
     uint32_t res15[1];
-    __W uint32_t ICLR1;
+    __R  uint32_t IIDX2;
     uint32_t res16[1];
-    __R uint32_t IIDX2;
-    uint32_t res17[1];
     __RW uint32_t IMASK2;
+    uint32_t res17[1];
+    __R  uint32_t RIS2;
     uint32_t res18[1];
-    __R uint32_t RIS2;
+    __R  uint32_t MIS2;
     uint32_t res19[1];
-    __R uint32_t MIS2;
+    __W  uint32_t ISET2;
     uint32_t res20[1];
-    __W uint32_t ISET2;
-    uint32_t res21[1];
-    __W uint32_t ICLR2;
-    uint32_t res22[13];
-    __R uint32_t EVT_MODE;
-    __W uint32_t INTCTL;
-    uint32_t res23[6];
+    __W  uint32_t ICLR2;
+    uint32_t res21[13];
+    __R  uint32_t EVT_MODE;
+    __W  uint32_t INTCTL;
+    uint32_t res22[6];
     __RW uint32_t CTL0;
-    __RW uint32_t LCRH;
-    __R uint32_t STAT1;
+    __RW uint32_t CTL1;
+    __RW uint32_t CLKCTL;
     __RW uint32_t IFLS;
-    __RW uint32_t IBRD;
-    __RW uint32_t FBRD;
-    __RW uint32_t GFCTL;
-    uint32_t res24[1];
+    __R  uint32_t STAT1;
+    uint32_t res23[7];
+    __R  uint32_t RXDATA;
+    uint32_t res24[3];
     __RW uint32_t TXDATA;
-    __R uint32_t RXDATA;
+} spi_type;
+
+#define SPI0	((spi_type *)SPI0_BASE_ADDR )
+#define SPI1	((spi_type *)SPI1_BASE_ADDR )
+
+typedef struct
+{
+    __RW uint32_t PWREN;
+    __W  uint32_t RSTCTL;
+    __RW uint32_t CLKCFG;
+    uint32_t res0[2];
+    __R  uint32_t STAT0;
+    uint32_t res1[506];
+    __RW uint32_t CLKDIV;
+    __RW uint32_t CLKSEL;
+    uint32_t res2[4];
+    __RW uint32_t PDBGCTL;
+    uint32_t res3[1];
+    __R  uint32_t IIDX0;
+    uint32_t res4[1];
+    __RW uint32_t IMASK0;
+    uint32_t res5[1];
+    __R  uint32_t RIS0;
+    uint32_t res6[1];
+    __R  uint32_t MIS0;
+    uint32_t res7[1];
+    __W  uint32_t ISET0;
+    uint32_t res8[1];
+    __W  uint32_t ICLR0;
+    uint32_t res9[1];
+    __R  uint32_t IIDX1;
+    uint32_t res10[1];
+    __RW uint32_t IMASK1;
+    uint32_t res11[1];
+    __R  uint32_t RIS1;
+    uint32_t res12[1];
+    __R  uint32_t MIS1;
+    uint32_t res13[1];
+    __W  uint32_t ISET1;
+    uint32_t res14[1];
+    __W  uint32_t ICLR1;
+    uint32_t res15[1];
+    __R  uint32_t IIDX2;
+    uint32_t res16[1];
+    __RW uint32_t IMASK2;
+    uint32_t res17[1];
+    __R  uint32_t RIS2;
+    uint32_t res18[1];
+    __R  uint32_t MIS2;
+    uint32_t res19[1];
+    __W  uint32_t ISET2;
+    uint32_t res20[1];
+    __W  uint32_t ICLR2;
+    uint32_t res21[13];
+    __R  uint32_t EVT_MODE;
+    __W  uint32_t INTCTL;
+    uint32_t res22[5];
+    __R  uint32_t DESC;
+    uint32_t res23[64];
+    __RW uint32_t GFCTL;
+    __RW uint32_t TIMEOUT_CTL;
+    __R  uint32_t TIMEOUT_CNT;
+    uint32_t res24[1];
+    __RW uint32_t CSA;
+    __RW uint32_t CCTR;
+    __R  uint32_t CSR;
+    __R  uint32_t CRXDATA;
+    __RW uint32_t CTXDATA;
+    __RW uint32_t CTPR;
+    __RW uint32_t CCR;
     uint32_t res25[2];
-    __RW uint32_t LINCNT;
-    __RW uint32_t LINCTL;
-    __RW uint32_t LINC0;
-    __RW uint32_t LINC1;
-    __RW uint32_t IRCTL;
-    uint32_t res26[1];
-    __RW uint32_t AMASK;
-    __RW uint32_t ADDR;
-    uint32_t res27[4];
-    __RW uint32_t CLKDIV2;
-} UART_Type;
+    __R  uint32_t CBMON;
+    __RW uint32_t CFIFOCTL;
+    __R  uint32_t CFIFOSR;
+    __RW uint32_t CPECCTL;
+    __R  uint32_t CPECSR;
+    uint32_t res26[2];
+    __RW uint32_t TOAR;
+    __RW uint32_t TOAR2;
+    __RW uint32_t TCTR;
+    __R  uint32_t TSR;
+    __R  uint32_t TRXDATA;
+    __RW uint32_t TTXDATA;
+    __RW uint32_t TACKCTL;
+    __RW uint32_t TFIFOCTL;
+    __R  uint32_t TFIFOSR;
+    __RW uint32_t TPECCTL;
+    __R  uint32_t TPECSR;
+} i2c_type;
+
+#define I2C0_REGS ((i2c_type*)(I2C0_BASE_ADDR  + 0x800UL))
+#define I2C1_REGS ((i2c_type *)(I2C1_BASE_ADDR  + 0x800UL))
 
 // NOTE: --- Other Peripheral TypeDefs ---
 
 typedef struct
 {
-    uint32_t res0[1032];
-    __R uint32_t IIDX;
-    uint32_t res1;
-    __RW uint32_t IMASK;
-    uint32_t res2;
-    __R uint32_t RIS;
-    uint32_t res3;
-    __R uint32_t MIS;
-    uint32_t res4;
-    __W1S ISET;
-    uint32_t res5;
-    __W1C uint32_t ICLR;
-    uint32_t res6;
-    __R uint32_t NMIIIDX;
-    uint32_t res7[3];
-    __R uint32_t NMIRIS;
-    uint32_t res8[3];
-    __W1S uint32_t NMIISET;
-    uint32_t res9;
-    __W1C uint32_t NMIICLR;
-    uint32_t res10[33];
-    __RW uint32_t SYSOSCCFG;
-    __RW uint32_t MCLKCFG;
-    __RW uint32_t HSCLKEN;
-    __RW uint32_t HSCLKCFG;
-    __RW uint32_t HFCLKCLKCFG;
-    __RW uint32_t LFCLKCFG;
-    uint32_t res11[2];
-    __RW uint32_t SYSPLLCFG0;
-    __RW uint32_t SYSPLLCFG1;
-    __RW uint32_t SYSPLLPARAM0;
-    __RW uint32_t SYSPLLPARAM1;
-    uint32_t res12[2];
-    __RW uint32_t GENCLKCFG;
-    __RW uint32_t GENCLKEN;
-    __RW uint32_t PMODECFG;
-    uint32_t res13[3];
-    __R uint32_t FCC;
-    uint32_t res14[7];
-    __RW uint32_t SYSOSCTRIMUSER;
-    uint32_t res15;
-    __RW uint32_t SRAMBOUNDARY;
-    __RW uint32_t SRAMBOUNDARYHIGH;
-    __RW uint32_t SYSTEMCFG;
-    __RW uint32_t SRAMCFG;
-    uint32_t res16[30];
-    __RW uint32_t WRITELOCK;
-    __R uint32_t CLKSTATUS;
-    __R uint32_t SYSSTATUS;
-    __R uint32_t DEDERRADDR;
-    uint32_t res17[4];
-    __RC uint32_t RSTCAUSE;
-    uint32_t res18[55];
-    __RW uint32_t RESETLEVEL;
-    __W uint32_t RESETCMD;
-    __RW uint32_t BORTHRESHOLD;
-    __W uint32_t BORCLRCMD;
-    __W uint32_t SYSOSCFCLCTL;
-    __W uint32_t LFXTCTL;
-    __W uint32_t EXLFCTL;
-    __W uint32_t SHDNIOREL;
-    __W uint32_t EXRSTPIN;
-    __W uint32_t SYSSTATUSCLR;
-    __W uint32_t SWDCFG;
-    __W uint32_t FCCCMD;
-    uint32_t res19[52];
-    __RW uint32_t SHUTDNSTORE0;
-    __RW uint32_t SHUTDNSTORE1;
-    __RW uint32_t SHUTDNSTORE2;
-    __RW uint32_t SHUTDNSTORE3;
-    uint32_t res20[780];
-    __R uint32_t IDREG;
+	uint32_t res0[1032];
+	__R uint32_t IIDX;
+	uint32_t res1;
+	__RW uint32_t IMASK;
+	uint32_t res2;
+	__R uint32_t RIS;
+	uint32_t res3;
+	__R uint32_t MIS;
+	uint32_t res4;
+	__W1S ISET;
+	uint32_t res5;
+	__W1C uint32_t ICLR;
+	uint32_t res6;
+	__R uint32_t NMIIIDX;
+	uint32_t res7[3];
+	__R uint32_t NMIRIS;
+	uint32_t res8[3];
+	__W1S uint32_t NMIISET;
+	uint32_t res9;
+	__W1C uint32_t NMIICLR;
+	uint32_t res10[33];
+	__RW uint32_t SYSOSCCFG;
+	__RW uint32_t MCLKCFG;
+	__RW uint32_t HSCLKEN;
+	__RW uint32_t HSCLKCFG;
+	__RW uint32_t HFCLKCLKCFG;
+	__RW uint32_t LFCLKCFG;
+	uint32_t res11[2];
+	__RW uint32_t SYSPLLCFG0;
+	__RW uint32_t SYSPLLCFG1;
+	__RW uint32_t SYSPLLPARAM0;
+	__RW uint32_t SYSPLLPARAM1;
+	uint32_t res12[2];
+	__RW uint32_t GENCLKCFG;
+	__RW uint32_t GENCLKEN;
+	__RW uint32_t PMODECFG;
+	uint32_t res13[3];
+	__R uint32_t FCC;
+	uint32_t res14[7];
+	__RW uint32_t SYSOSCTRIMUSER;
+	uint32_t res15;
+	__RW uint32_t SRAMBOUNDARY;
+	__RW uint32_t SRAMBOUNDARYHIGH;
+	__RW uint32_t SYSTEMCFG;
+	__RW uint32_t SRAMCFG;
+	uint32_t res16[30];
+	__RW uint32_t WRITELOCK;
+	__R uint32_t CLKSTATUS;
+	__R uint32_t SYSSTATUS;
+	__R uint32_t DEDERRADDR;
+	uint32_t res17[4];
+	__RC uint32_t RSTCAUSE;
+	uint32_t res18[55];
+	__RW uint32_t RESETLEVEL;
+	__W uint32_t RESETCMD;
+	__RW uint32_t BORTHRESHOLD;
+	__W uint32_t BORCLRCMD;
+	__W uint32_t SYSOSCFCLCTL;
+	__W uint32_t LFXTCTL;
+	__W uint32_t EXLFCTL;
+	__W uint32_t SHDNIOREL;
+	__W uint32_t EXRSTPIN;
+	__W uint32_t SYSSTATUSCLR;
+	__W uint32_t SWDCFG;
+	__W uint32_t FCCCMD;
+	uint32_t res19[52];
+	__RW uint32_t SHUTDNSTORE0;
+	__RW uint32_t SHUTDNSTORE1;
+	__RW uint32_t SHUTDNSTORE2;
+	__RW uint32_t SHUTDNSTORE3;
+	uint32_t res20[780];
+	__R uint32_t IDREG;
 } SYSCTL_Type;
 #define SYSCTL ((SYSCTL_Type*)SYSCTL_BASE_ADDR)
 
-#define SYSCTL_MCLKCFG_MDIV                         0
-#define SYSCTL_MCLKCFG_UDIV                         4
-#define SYSCTL_MCLKCFG_FLASHWAIT                    8
-#define SYSCTL_MCLKCFG_USEMFTICK                    12
-#define SYSCTL_MCLKCFG_USEHSCLK                     16
-#define SYSCTL_MCLKCFG_USELFCLK                     20
-#define SYSCTL_MCLKCFG_STOPCLKSTBY                  21
-#define SYSCTL_MCLKCFG_MCLKDEADCHK                  22
+#define SYSCTL_MCLKCFG_MDIV 0
+#define SYSCTL_MCLKCFG_UDIV 4
+#define SYSCTL_MCLKCFG_FLASHWAIT 8
+#define SYSCTL_MCLKCFG_USEMFTICK 12
+#define SYSCTL_MCLKCFG_USEHSCLK 16
+#define SYSCTL_MCLKCFG_USELFCLK 20
+#define SYSCTL_MCLKCFG_STOPCLKSTBY 21
+#define SYSCTL_MCLKCFG_MCLKDEADCHK 22
 
-#define SYSCTL_GENCLKCFG_EXCLKSRC                   0
-#define SYSCTL_GENCLKCFG_EXCLKDIVVAL                4
-#define SYSCTL_GENCLKCFG_EXCLKDIVEN                 7
-#define SYSCTL_GENCLKCFG_CANCLKSRC                  8
-#define SYSCTL_GENCLKCFG_MFPCLKSRC                  9
-#define SYSCTL_GENCLKCFG_HFCLK4MFPCLKDIV            12
-#define SYSCTL_GENCLKCFG_FCCSELCLK                  16
-#define SYSCTL_GENCLKCFG_FCCTRIGSRC                 20
-#define SYSCTL_GENCLKCFG_FCCLVLTRIG                 21
-#define SYSCTL_GENCLKCFG_ANACPUMPCFG                22
-#define SYSCTL_GENCLKCFG_FCCTRIGCNT                 24
+#define SYSCTL_GENCLKCFG_EXCLKSRC 0
+#define SYSCTL_GENCLKCFG_EXCLKDIVVAL 4
+#define SYSCTL_GENCLKCFG_EXCLKDIVEN 7
+#define SYSCTL_GENCLKCFG_CANCLKSRC 8
+#define SYSCTL_GENCLKCFG_MFPCLKSRC 9
+#define SYSCTL_GENCLKCFG_HFCLK4MFPCLKDIV 12
+#define SYSCTL_GENCLKCFG_FCCSELCLK 16
+#define SYSCTL_GENCLKCFG_FCCTRIGSRC 20
+#define SYSCTL_GENCLKCFG_FCCLVLTRIG 21
+#define SYSCTL_GENCLKCFG_ANACPUMPCFG 22
+#define SYSCTL_GENCLKCFG_FCCTRIGCNT 24
 
-#define SYSCTL_HSCLKEN_HFXTEN                       0
-#define SYSCTL_HSCLKEN_SYSPLLEN                     8
-#define SYSCTL_HSCLKEN_USEEXTHFCLK                  16
+#define SYSCTL_HSCLKEN_HFXTEN 0
+#define SYSCTL_HSCLKEN_SYSPLLEN 8
+#define SYSCTL_HSCLKEN_USEEXTHFCLK 16
 
-#define SYSCTL_HFCLKCLKCFG_HFXTTIME                 28
-#define SYSCTL_HFCLKCLKCFG_HFXTRSEL                 12
-#define SYSCTL_HFCLKCLKCFG_HFCLKFLTCHK              0
+#define SYSCTL_HFCLKCLKCFG_HFXTTIME 28
+#define SYSCTL_HFCLKCLKCFG_HFXTRSEL 12
+#define SYSCTL_HFCLKCLKCFG_HFCLKFLTCHK 0
 
-#define SYSCTL_GENCLKEN_EXCLKEN                     0
-#define SYSCTL_GENCLKEN_MFPCLKEN                    4
+#define SYSCTL_GENCLKEN_EXCLKEN 0
+#define SYSCTL_GENCLKEN_MFPCLKEN 4
 
-#define SYSCTL_GENCLKCFG_EXCLKSRC_MASK              (0x7UL << SYSCTL_GENCLKCFG_EXCLKSRC)
-#define SYSCTL_GENCLKCFG_EXCLKSRC_SYSOSC            (0x0UL)
+#define SYSCTL_GENCLKCFG_EXCLKSRC_MASK (0x7UL << SYSCTL_GENCLKCFG_EXCLKSRC)
+#define SYSCTL_GENCLKCFG_EXCLKSRC_SYSOSC (0x0UL)
 
-#define SYSCTL_HSCLKCFG_HSCLKSEL                    0
+#define SYSCTL_HSCLKCFG_HSCLKSEL 0
 
-#define SYSCTL_SYSPLLPARAM0_STARTTIME               0
-#define SYSCTL_SYSPLLPARAM0_STARTTIMELP             8
-#define SYSCTL_SYSPLLPARAM0_CPCURRENT               16
-#define SYSCTL_SYSPLLPARAM0_CAPBVAL                 24
-#define SYSCTL_SYSPLLPARAM0_CAPBOVERRIDE            31
+#define SYSCTL_SYSPLLPARAM0_STARTTIME 0
+#define SYSCTL_SYSPLLPARAM0_STARTTIMELP 8
+#define SYSCTL_SYSPLLPARAM0_CPCURRENT 16
+#define SYSCTL_SYSPLLPARAM0_CAPBVAL 24
+#define SYSCTL_SYSPLLPARAM0_CAPBOVERRIDE 31
 
-#define SYSCTL_SYSPLLPARAM1_LPFCAPA                 0
-#define SYSCTL_SYSPLLPARAM1_LPFRESA                 8
-#define SYSCTL_SYSPLLPARAM1_LPFRESC                 24
+#define SYSCTL_SYSPLLPARAM1_LPFCAPA 0
+#define SYSCTL_SYSPLLPARAM1_LPFRESA 8
+#define SYSCTL_SYSPLLPARAM1_LPFRESC 24
 
-#define SYSCTL_SYSPLLCFG1_PDIV                      0
-#define SYSCTL_SYSPLLCFG1_QDIV                      8
+#define SYSCTL_SYSPLLCFG1_PDIV 0
+#define SYSCTL_SYSPLLCFG1_QDIV 8
 
-#define SYSCTL_SYSPLLCFG0_SYSPLLREF                 0
-#define SYSCTL_SYSPLLCFG0_MCLK2XVCO                 1
-#define SYSCTL_SYSPLLCFG0_ENABLECLK0                4
-#define SYSCTL_SYSPLLCFG0_ENABLECLK1                5
-#define SYSCTL_SYSPLLCFG0_ENABLECLK2X               6
-#define SYSCTL_SYSPLLCFG0_RDIVCLK0                  8
-#define SYSCTL_SYSPLLCFG0_RDIVCLK1                  12
-#define SYSCTL_SYSPLLCFG0_RDIVCLK2X                 16
+#define SYSCTL_SYSPLLCFG0_SYSPLLREF 0
+#define SYSCTL_SYSPLLCFG0_MCLK2XVCO 1
+#define SYSCTL_SYSPLLCFG0_ENABLECLK0 4
+#define SYSCTL_SYSPLLCFG0_ENABLECLK1 5
+#define SYSCTL_SYSPLLCFG0_ENABLECLK2X 6
+#define SYSCTL_SYSPLLCFG0_RDIVCLK0 8
+#define SYSCTL_SYSPLLCFG0_RDIVCLK1 12
+#define SYSCTL_SYSPLLCFG0_RDIVCLK2X 16
 
-#define SYSCTL_CLKSTATUS_SYSOSCFREQ                 0
-#define SYSCTL_CLKSTATUS_HSCLKMUX                   4
-#define SYSCTL_CLKSTATUS_LFCLKMUX                   6
-#define SYSCTL_CLKSTATUS_HFCLKGOOD                  8
-#define SYSCTL_CLKSTATUS_SYSPLLGOOD                 9
-#define SYSCTL_CLKSTATUS_LFXTGOOD                   10
-#define SYSCTL_CLKSTATUS_LFOSCGOOD                  11
-#define SYSCTL_CLKSTATUS_HSCLKSOFF                  12
-#define SYSCTL_CLKSTATUS_HFCLKOFF                   13
-#define SYSCTL_CLKSTATUS_SYSPLLOFF                  14
-#define SYSCTL_CLKSTATUS_CURHSCLKSEL                16
-#define SYSCTL_CLKSTATUS_CURMCLKSEL                 17
-#define SYSCTL_CLKSTATUS_HSCLKDEAD                  20
-#define SYSCTL_CLKSTATUS_HSCLKGOOD                  21
-#define SYSCTL_CLKSTATUS_LFCLKFAIL                  23
-#define SYSCTL_CLKSTATUS_FCLMODE                    24
-#define SYSCTL_CLKSTATUS_FCCDONE                    25
-#define SYSCTL_CLKSTATUS_HFCLKBLKUPD                28
-#define SYSCTL_CLKSTATUS_SYSPLLBLKUPD               29
-#define SYSCTL_CLKSTATUS_OPAMPCLKERR                30
-#define SYSCTL_CLKSTATUS_ANACLKERR                  31
+#define SYSCTL_CLKSTATUS_SYSOSCFREQ 0
+#define SYSCTL_CLKSTATUS_HSCLKMUX 4
+#define SYSCTL_CLKSTATUS_LFCLKMUX 6
+#define SYSCTL_CLKSTATUS_HFCLKGOOD 8
+#define SYSCTL_CLKSTATUS_SYSPLLGOOD 9
+#define SYSCTL_CLKSTATUS_LFXTGOOD 10
+#define SYSCTL_CLKSTATUS_LFOSCGOOD 11
+#define SYSCTL_CLKSTATUS_HSCLKSOFF 12
+#define SYSCTL_CLKSTATUS_HFCLKOFF 13
+#define SYSCTL_CLKSTATUS_SYSPLLOFF 14
+#define SYSCTL_CLKSTATUS_CURHSCLKSEL 16
+#define SYSCTL_CLKSTATUS_CURMCLKSEL 17
+#define SYSCTL_CLKSTATUS_HSCLKDEAD 20
+#define SYSCTL_CLKSTATUS_HSCLKGOOD 21
+#define SYSCTL_CLKSTATUS_LFCLKFAIL 23
+#define SYSCTL_CLKSTATUS_FCLMODE 24
+#define SYSCTL_CLKSTATUS_FCCDONE 25
+#define SYSCTL_CLKSTATUS_HFCLKBLKUPD 28
+#define SYSCTL_CLKSTATUS_SYSPLLBLKUPD 29
+#define SYSCTL_CLKSTATUS_OPAMPCLKERR 30
+#define SYSCTL_CLKSTATUS_ANACLKERR 31
 
-#define HWREGW(x) (*((volatile uint32_t *)(x)))
+#define HWREGW(x) (*((volatile uint32_t*)(x)))
 
 // TODO:
 // COMP, DAC, OPA, VREF, WWDT, TIM, RTC, GPIO, DEBUG, EVENT, NVMNW, I2C,
@@ -590,45 +753,44 @@ typedef struct
 // NOTE: --- Interrupt Definitions ---
 
 typedef enum IRQn {
-NonMaskableInt_IRQn = -14,/* 2  Non Maskable Interrupt */
-HardFault_IRQn = -13,/* 3  Hard Fault Interrupt */
-SVCall_IRQn = -5,/* 11 SV Call Interrupt */
-PendSV_IRQn = -2,/* 14 Pend SV Interrupt */
-SysTick_IRQn = -1,/* 15 System Tick Interrupt */
-SYSCTL_INT_IRQn = 0,/* 16 SYSCTL_INT Interrupt */
-WWDT1_INT_IRQn = 0,/* 16 WWDT1_INT Interrupt */
-WWDT0_INT_IRQn = 0,/* 16 WWDT0_INT Interrupt */
-FLASHCTL_INT_IRQn = 0,/* 16 FLASHCTL_INT Interrupt */
-DEBUGSS_INT_IRQn = 0,/* 16 DEBUGSS_INT Interrupt */
-GPIOB_INT_IRQn = 1,/* 17 GPIOB_INT Interrupt */
-GPIOA_INT_IRQn = 1,/* 17 GPIOA_INT Interrupt */
-TRNG_INT_IRQn = 1,/* 17 TRNG_INT Interrupt */
-COMP0_INT_IRQn = 1,/* 17 COMP0_INT Interrupt */
-COMP1_INT_IRQn = 1,/* 17 COMP1_INT Interrupt */
-COMP2_INT_IRQn = 1,/* 17 COMP2_INT Interrupt */
-TIMG8_INT_IRQn = 2,/* 18 TIMG8_INT Interrupt */
-UART3_INT_IRQn = 3,/* 19 UART3_INT Interrupt */
-ADC0_INT_IRQn = 4,/* 20 ADC0_INT Interrupt */
-ADC1_INT_IRQn = 5,/* 21 ADC1_INT Interrupt */
-CANFD0_INT_IRQn = 6,/* 22 CANFD0_INT Interrupt */
-DAC0_INT_IRQn = 7,/* 23 DAC0_INT Interrupt */
-SPI0_INT_IRQn = 9,/* 25 SPI0_INT Interrupt */
-SPI1_INT_IRQn = 10,/* 26 SPI1_INT Interrupt */
-UART1_INT_IRQn = 13,/* 29 UART1_INT Interrupt */
-UART2_INT_IRQn = 14,/* 30 UART2_INT Interrupt */
-UART0_INT_IRQn = 15,/* 31 UART0_INT Interrupt */
-TIMG0_INT_IRQn = 16,/* 32 TIMG0_INT Interrupt */
-TIMG6_INT_IRQn = 17,/* 33 TIMG6_INT Interrupt */
-TIMA0_INT_IRQn = 18,/* 34 TIMA0_INT Interrupt */
-TIMA1_INT_IRQn = 19,/* 35 TIMA1_INT Interrupt */
-TIMG7_INT_IRQn = 20,/* 36 TIMG7_INT Interrupt */
-TIMG12_INT_IRQn = 21,/* 37 TIMG12_INT Interrupt */
-I2C0_INT_IRQn = 24,/* 40 I2C0_INT Interrupt */
-I2C1_INT_IRQn = 25,/* 41 I2C1_INT Interrupt */
-AES_INT_IRQn = 28,/* 44 AES_INT Interrupt */
-RTC_INT_IRQn = 30,/* 46 RTC_INT Interrupt */
-DMA_INT_IRQn = 31,/* 47 DMA_INT Interrupt */
+	NonMaskableInt_IRQn = -14, /* 2  Non Maskable Interrupt */
+	HardFault_IRQn = -13,      /* 3  Hard Fault Interrupt */
+	SVCall_IRQn = -5,          /* 11 SV Call Interrupt */
+	PendSV_IRQn = -2,          /* 14 Pend SV Interrupt */
+	SysTick_IRQn = -1,         /* 15 System Tick Interrupt */
+	SYSCTL_INT_IRQn = 0,       /* 16 SYSCTL_INT Interrupt */
+	WWDT1_INT_IRQn = 0,        /* 16 WWDT1_INT Interrupt */
+	WWDT0_INT_IRQn = 0,        /* 16 WWDT0_INT Interrupt */
+	FLASHCTL_INT_IRQn = 0,     /* 16 FLASHCTL_INT Interrupt */
+	DEBUGSS_INT_IRQn = 0,      /* 16 DEBUGSS_INT Interrupt */
+	GPIOB_INT_IRQn = 1,        /* 17 GPIOB_INT Interrupt */
+	GPIOA_INT_IRQn = 1,        /* 17 GPIOA_INT Interrupt */
+	TRNG_INT_IRQn = 1,         /* 17 TRNG_INT Interrupt */
+	COMP0_INT_IRQn = 1,        /* 17 COMP0_INT Interrupt */
+	COMP1_INT_IRQn = 1,        /* 17 COMP1_INT Interrupt */
+	COMP2_INT_IRQn = 1,        /* 17 COMP2_INT Interrupt */
+	TIMG8_INT_IRQn = 2,        /* 18 TIMG8_INT Interrupt */
+	UART3_INT_IRQn = 3,        /* 19 UART3_INT Interrupt */
+	ADC0_INT_IRQn = 4,         /* 20 ADC0_INT Interrupt */
+	ADC1_INT_IRQn = 5,         /* 21 ADC1_INT Interrupt */
+	CANFD0_INT_IRQn = 6,       /* 22 CANFD0_INT Interrupt */
+	DAC0_INT_IRQn = 7,         /* 23 DAC0_INT Interrupt */
+	SPI0_INT_IRQn = 9,         /* 25 SPI0_INT Interrupt */
+	SPI1_INT_IRQn = 10,        /* 26 SPI1_INT Interrupt */
+	UART1_INT_IRQn = 13,       /* 29 UART1_INT Interrupt */
+	UART2_INT_IRQn = 14,       /* 30 UART2_INT Interrupt */
+	UART0_INT_IRQn = 15,       /* 31 UART0_INT Interrupt */
+	TIMG0_INT_IRQn = 16,       /* 32 TIMG0_INT Interrupt */
+	TIMG6_INT_IRQn = 17,       /* 33 TIMG6_INT Interrupt */
+	TIMA0_INT_IRQn = 18,       /* 34 TIMA0_INT Interrupt */
+	TIMA1_INT_IRQn = 19,       /* 35 TIMA1_INT Interrupt */
+	TIMG7_INT_IRQn = 20,       /* 36 TIMG7_INT Interrupt */
+	TIMG12_INT_IRQn = 21,      /* 37 TIMG12_INT Interrupt */
+	I2C0_INT_IRQn = 24,        /* 40 I2C0_INT Interrupt */
+	I2C1_INT_IRQn = 25,        /* 41 I2C1_INT Interrupt */
+	AES_INT_IRQn = 28,         /* 44 AES_INT Interrupt */
+	RTC_INT_IRQn = 30,         /* 46 RTC_INT Interrupt */
+	DMA_INT_IRQn = 31,         /* 47 DMA_INT Interrupt */
 } IRQn_Type;
 
 #endif
-
