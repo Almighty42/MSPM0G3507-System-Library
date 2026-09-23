@@ -4,238 +4,177 @@
 #include "mspm0g350x_startup.h"
 #include <stdint.h>
 
-// // ============================================================================
-// // SPI0 base 0x40468000U
-// // ============================================================================
-//
-// typedef struct {
-//     __I  uint32_t IIDX;                     // (@ 0x00001080) Interrupt index register
-//          uint32_t RESERVED0;
-//     __IO uint32_t IMASK;                    // (@ 0x00001088) Interrupt mask
-//          uint32_t RESERVED1;
-//     __I  uint32_t RIS;                      // (@ 0x00001090) Raw interrupt status
-//          uint32_t RESERVED2;
-//     __I  uint32_t MIS;                      // (@ 0x00001098) Masked interrupt status
-//          uint32_t RESERVED3;
-//     __O  uint32_t ISET;                     // (@ 0x000010A0) Interrupt set
-//          uint32_t RESERVED4;
-//     __O  uint32_t ICLR;                     // (@ 0x000010A8) Interrupt clear
-// } SPI_DMA_TRIG_TX_Regs;
-//
-// typedef struct {
-//     __I  uint32_t IIDX;                     // (@ 0x00001050) Interrupt index register
-//          uint32_t RESERVED0;
-//     __IO uint32_t IMASK;                    // (@ 0x00001058) Interrupt mask
-//          uint32_t RESERVED1;
-//     __I  uint32_t RIS;                      // (@ 0x00001060) Raw interrupt status
-//          uint32_t RESERVED2;
-//     __I  uint32_t MIS;                      // (@ 0x00001068) Masked interrupt status
-//          uint32_t RESERVED3;
-//     __O  uint32_t ISET;                     // (@ 0x00001070) Interrupt set
-//          uint32_t RESERVED4;
-//     __O  uint32_t ICLR;                     // (@ 0x00001078) Interrupt clear
-// } SPI_DMA_TRIG_RX_Regs;
-//
-// typedef struct{
-//     __I  uint32_t IIDX;                     // (@ 0x00001020) Interrupt index register
-//          uint32_t RESERVED0;
-//     __IO uint32_t IMASK;                    // (@ 0x00001028) Interrupt mask
-//          uint32_t RESERVED1;
-//     __I  uint32_t RIS;                      // (@ 0x00001030) Raw interrupt status
-//          uint32_t RESERVED2;
-//     __I  uint32_t MIS;                      // (@ 0x00001038) Masked interrupt status
-//          uint32_t RESERVED3;
-//     __O  uint32_t ISET;                     // (@ 0x00001040) Interrupt set
-//          uint32_t RESERVED4;
-//     __O  uint32_t ICLR;                     // (@ 0x00001048) Interrupt clear
-// } SPI_CPU_INT_Regs;
-//
-// typedef struct{
-//     __IO uint32_t PWREN;                    // (@ 0x00000800) Power enable
-//     __O  uint32_t RSTCTL;                   // (@ 0x00000804) Reset control
-//     __IO uint32_t CLKCFG;                   // (@ 0x00000808) Peripheral clock configuration register
-//          uint32_t RESERVED0[2];
-//     __I  uint32_t STAT;                     // (@ 0x00000814) Status register
-// } SPI_GPRCM_Regs;
-//
-// typedef struct{
-//          uint32_t RESERVED0[512];
-//     SPI_GPRCM_Regs GPRCM;                   // (@ 0x00000800) 
-//          uint32_t RESERVED1[506];
-//     __IO uint32_t CLKDIV;                   // (@ 0x00001000) Clock Divider
-//     __IO uint32_t CLKSEL;                   // (@ 0x00001004) Clock Select for Ultra Low Power Peripherals
-//          uint32_t RESERVED2[4];
-//     __IO uint32_t PDBGCTL;                  // (@ 0x00001018) Peripheral Debug Control
-//          uint32_t RESERVED3;
-//     SPI_CPU_INT_Regs CPU_INT;               // (@ 0x00001020)
-//          uint32_t RESERVED4;
-//     SPI_DMA_TRIG_RX_Regs DMA_TRIG_RX;       // (@ 0x00001050)
-//          uint32_t RESERVED5;
-//     SPI_DMA_TRIG_TX_Regs DMA_TRIG_TX;       // (@ 0x00001080)
-//          uint32_t RESERVED6[13];
-//     __IO uint32_t EVT_MODE;                 // (@ 0x000010E0) Event mode
-//     __IO uint32_t INTCTL;                   // (@ 0x000010E4) Interrupt Control register
-//          uint32_t RESERVED7[6];
-//     __IO uint32_t CTL0;                     // (@ 0x00001100) SPI Control register 0
-//     __IO uint32_t CTL1;                     // (@ 0x00001104) SPI Control register 1
-//     __IO uint32_t CLKCTL;                   // (@ 0x00001108) Clock prescaler and divider register
-//     __IO uint32_t IFLS;                     // (@ 0x0000110C) Interrupt FIFO Level Select Register
-//     __I  uint32_t STAT;                     // (@ 0x00001110) Status register
-//          uint32_t RESERVED8[7];
-//     __I  uint32_t RXDATA;                   // (@ 0x00001130) RXDATA Register
-//          uint32_t RESERVED9[3];
-//     __IO uint32_t TXDATA;                   // (@ 0x00001140) TXDATA Register
-// } SPI_Regs;
-//
-// #define SPI ((SPI_Regs *) SPI0_BASE)
+// NOTE: --- Structures for SPI ---
 
-// USAGE: --- @SPI_CLKDIV ---
+typedef struct
+{
+	uint8_t SPI_Device_Mode;					// Possible values from @SPI_DEVICE_MODE
+	uint8_t SPI_Clock_Source;					// Possible values from @SPI_CLOCK_SOURCE
+	uint8_t SPI_SCLK_Speed;						// Possible values from @SPI_SCLK_SPEED
+	uint8_t SPI_Data_Width;						// Possible values from @SPI_DATA_WIDTH
+	uint8_t SPI_CPOL;						// Possible values from @SPI_CPOL
+	uint8_t SPI_CPHA;						// Possible values from @SPI_CPHA
+	uint8_t SPI_CS_Select;						// Possible values from @SPI_CS_SELECT
+} spi_config_t;
 
-typedef enum{
-     SPI_CLKDIV_NO_DIV = 0U,
-     SPI_CLKDIV_2_DIV = 1U,
-     SPI_CLKDIV_3_DIV = 2U,
-     SPI_CLKDIV_4_DIV = 3U,
-     SPI_CLKDIV_5_DIV = 4U,
-     SPI_CLKDIV_6_DIV = 5U,
-     SPI_CLKDIV_7_DIV = 6U,
-     SPI_CLKDIV_8_DIV = 7U,
-} spi_clock_div_t;
+typedef struct
+{
+	spi_type* p_SPIx;						// Holds the base address of the SPI peripheral 
+	spi_config_t spi_config;					// Holds SPI peripheral configuration settings
+	uint8_t *p_tx_buffer;						// Stores application Tx buffer address
+	uint8_t *p_rx_buffer;						// Stores application Rx buffer address
+	uint32_t tx_len;						// Tx length
+	uint32_t rx_len;						// Rx length
+} spi_handle_t;
 
-#define SPI_CLKDIV_RATIO_OFS          (0U)
-#define SPI_CLKDIV_RATIO_WIDTH        (3U)
+typedef enum {
+	SPI_OK = 0,							// Success
+	SPI_ERROR_INVALID_STATE,					// Invalid state of a argument
+	SPI_ERROR_NULL_PTR,						// NULL pointer passed
+	SPI_ERROR_INVALID_PORT,						// Invalid SPI port address
+	SPI_ERROR_INVALID_IRQ,						// Invalid IRQ number
+	SPI_ERROR_INVALID_MODE,						// Mode value out of range
+	SPI_ERROR_INVALID_CLOCK_SRC,					// Clock source is incorrect
+	SPI_ERROR_INVALID_SCLK_SPEED,					// SCLK speed value out of range
+	SPI_ERROR_INVALID_DATA_WIDTH,					// Data width value out of range
+	SPI_ERROR_INVALID_CPOL,						// CPOL value out of range
+	SPI_ERROR_INVALID_CPHA,						// CPHA value out of range
+	SPI_ERROR_INVALID_CS,						// CS value out of range
+	SPI_ERROR_TIMEOUT,						// SPI polling timeout
+	SPI_ERROR_NOT_ENABLED,						// SPI not enabled, but has to be 
+	SPI_ERROR_INVALID_LEN,						// Len is invalid
+	SPI_ERROR_RX_OVERFLOW,						// RX FIFO overflow detected
+	SPI_ERROR_TX_UNDERFLOW,						// TX FIFO underflow detected
+	SPI_BUSY							// SPI Tx / Rx busy
+} spi_status_t;
 
-// USAGE: --- @SPI_CLKSEL ---
+// USAGE: --- @SPI_DEVICE_MODE ---
 
-typedef enum{
-     SPI_CLKSEL_LFCLK  = 1,
-     SPI_CLKSEL_MFCLK  = 2,
-     SPI_CLKSEL_SYSCLK = 3,
-} spi_clock_t;
+#define SPI_DEVICE_MODE_PERIPHERAL		1
+#define SPI_DEVICE_MODE_CONTROLLER		0
 
-#define SPI_CLKSEL_LFCLK_OFS          (1U)
-#define SPI_CLKSEL_MFCLK_OFS          (2U)
-#define SPI_CLKSEL_SYSCLK_OFS         (3U)
+// USAGE: --- @SPI_CLOCK_SOURCE ---
 
+#define SPI_CLOCK_SRC_BUSCLK 0U
+#define SPI_CLOCK_SRC_MFCLK  1U
+#define SPI_CLOCK_SRC_LFCLK  2U
 
-// USAGE: --- @SPI_DSS ---
+// USAGE: --- @SPI_SCLK_SPEED ---
 
-typedef enum{
-     SPI_DSS_4B = 3U,
-     SPI_DSS_5B = 4U,
-     SPI_DSS_6B = 5U,
-     SPI_DSS_7B = 6U,
-     SPI_DSS_8B = 7U,
-     SPI_DSS_9B = 8U,
-     SPI_DSS_10B = 9U,
-     SPI_DSS_11B = 10U,
-     SPI_DSS_12B = 11U,
-     SPI_DSS_13B = 12U,
-     SPI_DSS_14B = 13U,
-     SPI_DSS_15B = 14U,
-     SPI_DSS_16B = 15U,
-} spi_data_size_t;
+#define SPI_SCLK_SPEED_DIV_1			0
+#define SPI_SCLK_SPEED_DIV_2			1
+#define SPI_SCLK_SPEED_DIV_3			2
+#define SPI_SCLK_SPEED_DIV_4			3
+#define SPI_SCLK_SPEED_DIV_5			4
+#define SPI_SCLK_SPEED_DIV_6			5
+#define SPI_SCLK_SPEED_DIV_7			6
+#define SPI_SCLK_SPEED_DIV_8			7
 
-// USAGE: --- @SPI_MODE ---
+// USAGE: --- @SPI_DATA_WIDTH ---
 
-typedef enum{
-     SPI_PERIPHERAL_MODE = 0U,
-     SPI_CONTROLLER_MODE = 1U,
-} spi_mode_t;
+typedef enum {
+    SPI_DATA_WIDTH_7  = 0x6,   
+    SPI_DATA_WIDTH_8  = 0x7,
+    SPI_DATA_WIDTH_9  = 0x8,
+    SPI_DATA_WIDTH_10 = 0x9,
+    SPI_DATA_WIDTH_11 = 0xA,
+    SPI_DATA_WIDTH_12 = 0xB,
+    SPI_DATA_WIDTH_13 = 0xC,
+    SPI_DATA_WIDTH_14 = 0xD,
+    SPI_DATA_WIDTH_15 = 0xE,
+    SPI_DATA_WIDTH_16 = 0xF 
+} spi_data_width_t;
 
-// USAGE: --- @SPI_TRANSFER_MODE ---
+// USAGE: --- @SPI_CPOL ---
 
-typedef enum{
-     SPI_MODE_0 = 0U,    // SPO = 0, SPH = 0
-     SPI_MODE_1 = 1U,    // SPO = 0, SPH = 1
-     SPI_MODE_2 = 2U,    // SPO = 1, SPH = 0
-     SPI_MODE_3 = 3U,    // SPO = 1, SPH = 1
-} spi_transfer_mode_t;
+#define SPI_CPOL_HIGH				1
+#define SPI_CPOL_LOW				0
 
-// USAGE: --- @SPI_FRAME_FORMAT_MODE ---
+// USAGE: --- @SPI_CPHA ---
 
-typedef enum{
-     SPI_FRF_MOTOROLA_3WIRE        = 0U,
-     SPI_FRF_MOTOROLA_4WIRE        = 1U,
-     SPI_FRF_TI_SYNC_SERIAL_FF     = 2U,
-     SPI_FRF_NATIONAL_MICROWIRE_FF = 3U,
-} spi_frame_format_t;
+#define SPI_CPHA_HIGH				1
+#define SPI_CPHA_LOW				0
 
-// USAGE: --- @SPI_BIT_ORDER ---
+// USAGE: --- @SPI_CS_SELECT ---
 
-typedef enum{
-     SPI_BIT_ORDER_LSB_FIRST = 0U,
-     SPI_BIT_ORDER_MSB_FIRST = 1U,
-} spi_bit_order_t;
+// WARNING: Hardware supports selecting 0-3, but this particular board only has SPI0 and SPI1, so for this reason the limitation is in place
 
-// USAGE: --- @SPI_CS_LINE ---
+#define SPI_CS_0				0
+#define SPI_CS_1				1
 
-typedef enum{
-     SPI_CS_LINE_0 = 0U,
-     SPI_CS_LINE_1 = 1U,
-     SPI_CS_LINE_2 = 2U,
-     SPI_CS_LINE_3 = 3U,
-} spi_cs_line_t;
+// NOTE: --- SPI Validation macros ---
 
-// RSTCTL Macros
+#define VALIDATE_SPI_PORT(port)		do { \
+							if ((port) == NULL || \
+							!((port) == SPI0 || (port) == SPI1 ) { \
+								return SPI_ERROR_INVALID_PORT; \
+							} \
+						} while(0)
+#define VALIDATE_SPI_DEVICE_MODE(mode)		VALIDATE_ENUM((mode), SPI_DEVICE_MODE_PERIPHERAL, SPI_ERROR_INVALID_MODE)
+#define VALIDATE_SPI_CLOCK_SRC(src) 		VALIDATE_ENUM((src), SPI_CLOCK_SRC_LFCLK, SPI_ERROR_INVALID_CLOCK_SRC)
+#define VALIDATE_SPI_SCLK_SPEED(wlen)		VALIDATE_ENUM((wlen), SPI_SCLK_SPEED_DIV_8, SPI_ERROR_INVALID_SCLK_SPEED)
+#define VALIDATE_SPI_DATA_WIDTH(width, err_code) do { \
+    if ((width) < SPI_DATA_WIDTH_7 || (width) > SPI_DATA_WIDTH_16) { \
+        return (err_code); \
+    } \
+} while (0)
+#define VALIDATE_SPI_CPOL(flow)			VALIDATE_ENUM((flow), SPI_CPOL_HIGH, SPI_ERROR_INVALID_CPOL)
+#define VALIDATE_SPI_CPHA(flow)			VALIDATE_ENUM((flow), SPI_CPHA_HIGH, SPI_ERROR_INVALID_CPHA)
+#define VALIDATE_SPI_ENABLED(port) 		VALIDATE_BIT_SET((port)->CTL1, SPI_CTL1_ENABLE, SPI_ERROR_NOT_ENABLED)
 
-#define SPI_RSTCTL_KEY_UNLOCK_W       (0xB1000000U)
-#define SPI_RSTCTL_RESETASSERT        (1U)
+// NOTE: --- Bit position definitions SPI_STAT ---
 
+#define SPI_SR_TFE_STATE   			0
+#define SPI_SR_TNF_STATE   			1
+#define SPI_SR_RFE_STATE   			2
+#define SPI_SR_RNF_STATE   			3
+#define SPI_SR_BUSY_STATE   			4
 
-// CTL0 Macros
+// NOTE: --- Bit position definitions SPI_STAT ( bit shifting ) ---
 
-#define SPI_CTL0_DSS_OFS              (0U)
-#define SPI_CTL0_DSS_WIDTH            (5U)
-#define SPI_CTL0_FRF_OFS              (5U)
-#define SPI_CTL0_FRF_WIDTH            (2U)
-#define SPI_CTL0_SPO_OFS              (8U)
-#define SPI_CTL0_SPH_OFS              (9U)
-#define SPI_CTL0_CSSEL_OFS            (12U)
-#define SPI_CTL0_CSSEL_WIDTH          (2U)
+#define SPI_SR_TFE   				(1U << 0)
+#define SPI_SR_TNF   				(1U << 1)
+#define SPI_SR_RFE   				(1U << 2)
+#define SPI_SR_RNF   				(1U << 3)
+#define SPI_SR_BUSY   				(1U << 4)
 
-// CTL1 Macros
+// NOTE: --- Bit position definitions SPI_CTL0 ---
 
-#define SPI_CTL1_ENABLE_OFS           (0U)
-#define SPI_CTL1_CP_OFS               (2U)
-#define SPI_CTL1_MSB_OFS              (4U)
+#define SPI_CTL0_CSCLR				14
+#define SPI_CTL0_CSSEL				12
+#define SPI_CTL0_SPH				9
+#define SPI_CTL0_SPO				8
+#define SPI_CTL0_PACKEN				7
+#define SPI_CTL0_FRF				5
+#define SPI_CTL0_DSS				0
 
-// CLKCTL Macros
+// NOTE: --- Bit position definitions SPI_CTL1 ---
 
-#define SPI_CLKCTL_SCR_OFS            (0U)
-#define SPI_CLKCTL_SCR_WIDTH          (10U)
-#define SPI_CLKCTL_DSAMPLE_OFS        (28U)
-#define SPI_CLKCTL_DSAMPLE_WIDTH      (4U)
+#define SPI_CTL1_ENABLE				0
+#define SPI_CTL1_LBM				1
+#define SPI_CTL1_CP				2
+#define SPI_CTL1_POD				3
+#define SPI_CTL1_MSB				4
+#define SPI_CTL1_PREN				5
+#define SPI_CTL1_PES				6
+#define SPI_CTL1_PTEN				8
+#define SPI_CTL1_CDENABLE			11
+#define SPI_CTL1_CDMODE				12
+#define SPI_CTL1_REPEATTX			16
+#define SPI_CTL1_RXTIMEOUT			24
 
-// STAT Macros
+// Peripheral clock setup
+spi_status_t spi_peri_clk_control(spi_type* p_spi_x, uint8_t EN_or_DI);
 
-#define SPI_STAT_TFE_OFS              (0U)
-#define SPI_STAT_TNF_OFS              (1U)
-#define SPI_STAT_RFE_OFS              (2U)
-#define SPI_STAT_RNF_OFS              (3U)
-#define SPI_STAT_BUSY_OFS             (4U)
+// Init / de-init
+spi_status_t spi_init(spi_handle_t *p_spi_handle);
+spi_status_t spi_de_init(spi_type* p_spi_x);
 
+// Data send / receive ( polling ) 
+spi_status_t spi_write_data_pl(spi_handle_t* p_spi_handle, const uint8_t* p_tx_buffer, uint32_t len, uint32_t timeout);
+spi_status_t spi_read_data_pl(spi_handle_t* p_spi_handle, uint8_t* p_rx_buffer, uint32_t len, uint32_t timeout);
 
-// ========================== Configuration Functions ===========================
-void spi_reset                     (void);
-void spi_enable_power              (void);
-void spi_disable_power             (void);
-void spi_set_clock_configuration   (spi_clock_t clock, spi_clock_div_t divider);
-void spi_set_clock_prescaler       (uint32_t scr);
-void spi_set_cs_line               (spi_cs_line_t line);
-void spi_set_mode                  (spi_mode_t mode);
-void spi_set_transfer_mode         (spi_transfer_mode_t transfer_mode);
-void spi_set_frame_format          (spi_frame_format_t frame_format);
-void spi_set_data_size             (spi_data_size_t size);
-void spi_set_bit_order             (spi_bit_order_t order);
-void spi_enable                    (void);
-void spi_disable                   (void);
-
-void spi_cs_enable                 (uint32_t pin);
-void spi_cs_disable                (uint32_t pin);
-uint8_t spi_transfer_byte              (uint8_t data);
-void spi_write_buffer              (uint32_t address, const uint8_t *data, uint32_t length, uint8_t WRITE_CMD);
-void spi_read_buffer               (uint32_t address, uint8_t *data, uint32_t length, uint8_t READ_CMD);
-
+// Peripheral control API
+spi_status_t spi_peri_control(spi_type* p_spi_x, uint8_t EN_or_DI);
 
 #endif

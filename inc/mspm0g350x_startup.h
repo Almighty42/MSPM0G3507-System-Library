@@ -182,8 +182,8 @@ typedef struct
 	__RW uint32_t RVR;
 	__RW uint32_t CVR;
 	__R uint32_t CALIB;
-} SysTick_Type;
-#define SysTick ((SysTick_Type*)SYSTICK_BASE_ADDR)
+} systick_type;
+#define SysTick ((systick_type*)SYSTICK_BASE_ADDR)
 
 typedef struct
 {
@@ -198,8 +198,8 @@ typedef struct
 	uint32_t res4[64];
 	__RW uint32_t IPR[8];
 
-} NVIC_Type;
-#define NVIC ((NVIC_Type*)NVIC_BASE_ADDR)
+} nvic_type;
+#define NVIC ((nvic_type*)NVIC_BASE_ADDR)
 
 typedef struct
 {
@@ -212,8 +212,8 @@ typedef struct
 	uint32_t res0;
 	__RW uint32_t SHPR2;
 	__RW uint32_t SHPR3;
-} SCB_Type;
-#define SCB ((SCB_Type*)SCB_BASE_ADDR)
+} scb_type;
+#define SCB ((scb_type*)SCB_BASE_ADDR)
 
 typedef struct
 {
@@ -222,8 +222,8 @@ typedef struct
 	__RW uint32_t MPU_RNR;
 	__RW uint32_t MPU_RBAR;
 	__RW uint32_t MPU_RASR;
-} MPU_Type;
-#define MPU ((MPU_Type*)MPU_BASE_ADDR)
+} mpu_type;
+#define MPU ((mpu_type*)MPU_BASE_ADDR)
 
 typedef struct
 {
@@ -341,13 +341,13 @@ typedef struct
 {
 	uint32_t res0;
 	__RW uint32_t PINCM[60];
-} IOMUX_SECCFG_Type;
+} iomux_seccfg_type;
 
 typedef struct
 {
-	IOMUX_SECCFG_Type SECCFG;
-} IOMUX_Type;
-#define IOMUX ((IOMUX_Type*)IOMUX_BASE_ADDR)
+	iomux_seccfg_type SECCFG;
+} iomux_type;
+#define IOMUX ((iomux_type*)IOMUX_BASE_ADDR)
 
 typedef struct
 {
@@ -660,8 +660,8 @@ typedef struct
 	__RW uint32_t SHUTDNSTORE3;
 	uint32_t res20[780];
 	__R uint32_t IDREG;
-} SYSCTL_Type;
-#define SYSCTL ((SYSCTL_Type*)SYSCTL_BASE_ADDR)
+} sysctl_type;
+#define SYSCTL ((sysctl_type*)SYSCTL_BASE_ADDR)
 
 #define SYSCTL_MCLKCFG_MDIV 0
 #define SYSCTL_MCLKCFG_UDIV 4
@@ -747,8 +747,8 @@ typedef struct
 #define HWREGW(x) (*((volatile uint32_t*)(x)))
 
 // TODO:
-// COMP, DAC, OPA, VREF, WWDT, TIM, RTC, GPIO, DEBUG, EVENT, NVMNW, I2C,
-// UART, MCPUSS, MATHACL, WUC, IOMUX, DMA, CRC, AES, TRNG, SPI, CAN, ADC
+// COMP, DAC, OPA, VREF, WWDT, TIM, RTC, GPIO, DEBUG, EVENT, NVMNW,
+// UART, MCPUSS, MATHACL, WUC, IOMUX, DMA, CRC, AES, TRNG, CAN, ADC
 
 // NOTE: --- Interrupt Definitions ---
 
@@ -791,6 +791,6 @@ typedef enum IRQn {
 	AES_INT_IRQn = 28,         /* 44 AES_INT Interrupt */
 	RTC_INT_IRQn = 30,         /* 46 RTC_INT Interrupt */
 	DMA_INT_IRQn = 31,         /* 47 DMA_INT Interrupt */
-} IRQn_Type;
+} irqn_type;
 
 #endif

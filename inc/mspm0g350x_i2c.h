@@ -1,296 +1,310 @@
-#ifndef MSPM0G3507_UART_DRIVER_H
-#define MSPM0G3507_UART_DRIVER_H
+#ifndef MSPM0G3507_I2C_DRIVER_H
+#define MSPM0G3507_I2C_DRIVER_H
 
 #include "mspm0g350x_startup.h"
 #include <stdint.h>
 
-// Ring buffer logic
+// NOTE: --- Structures for I2C ---
 
-#define USART_TX_BUFFER_SIZE			128
-#define USART_RX_BUFFER_SIZE			128
+typedef struct
+{
+	uint8_t I2C_Device_Mode;					// Possible values from @I2C_DEVICE_MODE
+	uint8_t I2C_Clock_Source;					// Possible values from @I2C_CLOCK_SOURCE
+	uint8_t I2C_Clock_Prescale;					// Possible values from @I2C_CLOCK_PRESCALE
+	uint16_t I2C_Timer_Period;					// Possible values from @I2C_TIMER_PERIOD
+	uint8_t I2C_Addressing_Mode;					// Possible values from @I2C_ADDRESSING_MODE
+	uint16_t  I2C_Own_Address;					// Possible values from @I2C_OWN_ADDRESS
+	uint8_t I2C_Enable_Glitch_Filter;				// Possible values from @I2C_ENABLE_GLITCH_FILTER
+	uint8_t I2C_Clock_Stretch;					// Possible values from @I2C_CLOCK_STRETCH
+} i2c_config_t;
 
-// Configuration structure for a USART
-
-typedef struct {
-	uint16_t buffer[USART_TX_BUFFER_SIZE];				// Transmit ring buffer
-	volatile uint16_t head;						// Tx ring buffer head
-	volatile uint16_t tail;						// Tx ring buffer tail
-} USART_tx_ring_t;
-
-typedef struct {
-	uint16_t buffer[USART_RX_BUFFER_SIZE];				// Receive ring buffer
-	volatile uint16_t head;						// Rx ring buffer head
-	volatile uint16_t tail;						// Rx ring buffer tail
-} USART_rx_ring_t;
-
-typedef struct {
-	uint8_t USART_mode;						// Possible values from @USART_MODE
-	uint32_t USART_baud;						// Possible values from @USART_BAUD
-	uint8_t USART_n_stop_bits;					// Possible values from @USART_NO_STOP_BITS
-	uint8_t USART_word_len;						// Possible values from @USART_WORD_LENGTH
-	uint8_t USART_parity_control;					// Possible values from @USART_PARITY_CONTROL
-	uint8_t USART_hw_flow_control;					// Possible values from @USART_HW_FLOW_CONTROL
-} USART_Pin_Config_t;
-
-// Handle structure for USART
-typedef struct {
-	UART_Type *p_USARTx;					// Holds the base address of the USART peripheral 
-	USART_Pin_Config_t USART_Pin_Config;				// Holds USART peripheral configuration settings
-	uint8_t *p_tx_buffer;						// Stores application Tx buffer address
-	uint8_t *p_rx_buffer;						// Stores application Rx buffer address
+typedef struct
+{
+	i2c_type* p_I2Cx;						// Holds the base address of the I2C peripheral
+	i2c_config_t i2c_config;					// Holds I2C peripheral configuration settings
+	uint8_t* p_tx_buffer;						// Stores application Tx buffer address
+	uint8_t* p_rx_buffer;						// Stores application Rx buffer address
 	uint32_t tx_len;						// Tx length
 	uint32_t rx_len;						// Rx length
-	uint8_t tx_busy_state;						// Is transmission in  busy state
-	uint8_t rx_busy_state;						// Is receiving in  busy state
-	USART_tx_ring_t tx_buffer;					// TX buffer for USART
-	USART_rx_ring_t rx_buffer;					// RX buffer for USART
-} USART_Handle_t;
-
-// Application events
+} i2c_handle_t;
 
 typedef enum {
-	USART_APP_EVENT_TX_CMPLT = 0,					// All bytes in the TX buffer have been sent
-	USART_APP_EVENT_RX_CMPLT,					// The expected number of bytes has been received
-	USART_APP_EVENT_IDLE,						// Idle line detected (no data for at least 1 frame)
-	USART_APP_EVENT_CTS,						// CTS line changed (HW flow control event)
-	USART_APP_EVENT_PE,						// Parity error detected on received data
-	USART_APP_ERR_FE,						// Framing error (invalid/missing stop bit)
-	USART_APP_ERR_NE,						// Noise error detected during reception
-	USART_APP_ERR_ORE,						// Overrun error (new data overwrote unread data)
-} USART_AppEvent_t;
+	I2C_OK = 0,							// Success
+	I2C_ERROR_INVALID_STATE,					// Function called in an invalid driver state
+	I2C_ERROR_NULL_PTR,						// NULL pointer passed
+	I2C_ERROR_INVALID_PORT,						// Invalid I2C peripheral base address
+	I2C_ERROR_INVALID_IRQ,						// Invalid IRQ number; keep only if IRQ API exists
+	I2C_ERROR_INVALID_MODE,						// Invalid controller/target role
+	I2C_ERROR_INVALID_CLOCK_SRC,					// Invalid functional clock source
+	I2C_ERROR_INVALID_CLKDIV,					// Invalid CLKDIV.RATIO configuration
+	I2C_ERROR_INVALID_SPEED,					// Invalid SCL speed / MTPR.TPR value
+	I2C_ERROR_INVALID_ADDR_MODE,					// Invalid 7-bit/10-bit address-mode selection
+	I2C_ERROR_INVALID_ADDRESS,					// Address outside the selected range
+	I2C_ERROR_INVALID_LEN,						// Zero or unsupported transfer length
 
-// Function return status
-typedef enum {
-	USART_OK = 0,							// Success
-	USART_ERROR_INVALID_STATE,					// Invalid state of a argument
-	USART_ERROR_NULL_PTR,						// NULL pointer passed
-	USART_ERROR_INVALID_PORT,					// Invalid USART port address
-	USART_ERROR_INVALID_MODE,					// Mode value out of range
-	USART_ERROR_INVALID_IRQ,					// Invalid IRQ number
-	USART_ERROR_INVALID_STOP_BITS,					// Stop bits out of range
-	USART_ERROR_INVALID_WORD_LENGTH,				// Word length out of range
-	USART_ERROR_INVALID_PARITY_CONTROL,				// Parity control out of range
-	USART_ERROR_INVALID_HARDWARE_FLOW,				// Hardware flow control out of range
-	USART_ERROR_INVALID_BAUD_RATE,					// Baud rate out of range
-	USART_ERROR_NOT_ENABLED,					// USART not enabled, but has to be
-	USART_ERROR_TX_NOT_ENABLED,					// Tx not enabled, but has to be
-	USART_ERROR_RX_NOT_ENABLED,					// Rx not enabled, but has to be
-	USART_ERROR_TIMEOUT,						// USART polling timeout
-	USART_BUSY							// USART Tx / Rx busy
-} USART_status_t;
+	/* Peripheral / transfer state */
+	I2C_ERROR_NOT_ENABLED,						// CCR.ACTIVE or TCTR.ACTIVE is clear
+	I2C_ERROR_TIMEOUT,						// Polling timeout expired
+	I2C_ERROR_BUS_BUSY,						// Bus already busy before transaction
+	I2C_BUSY,							// Controller/target currently servicing a transfer
 
+	/* I2C protocol errors */
+	I2C_ERROR_NACK_ADDR,						// Address byte was NACKed
+	I2C_ERROR_NACK_DATA,						// Data byte was NACKed
+	I2C_ERROR_ARBITRATION_LOST,					// Controller lost arbitration
+	I2C_ERROR_BUS_ERROR,						// Generic hardware/bus error
 
-// USAGE: --- @USART_MODE ---
+	/* FIFO errors */
+	I2C_ERROR_RX_OVERFLOW,						// Controller or target RX FIFO overflow
+	I2C_ERROR_TX_UNDERFLOW						// Target TX FIFO underrun / stale data
+} i2c_status_t;
 
-#define USART_MODE_ONLY_TX			0
-#define USART_MODE_ONLY_RX			1
-#define USART_MODE_TXRX				2
+// USAGE: --- @I2C_DEVICE_MODE ---
 
-// USAGE: --- @USART_BAUD ---
+#define I2C_DEVICE_MODE_CONTROLLER    0U
+#define I2C_DEVICE_MODE_TARGET        1U
 
-#define USART_STD_BAUD_1200			1200
-#define USART_STD_BAUD_2400			2400
-#define USART_STD_BAUD_9600			9600
-#define USART_STD_BAUD_19200			19200
-#define USART_STD_BAUD_38400 			38400
-#define USART_STD_BAUD_57600 			57600
-#define USART_STD_BAUD_115200 			115200
-#define USART_STD_BAUD_230400 			230400
-#define USART_STD_BAUD_460800 			460800
-#define USART_STD_BAUD_921600 			921600
-#define USART_STD_BAUD_2M 			2000000
-#define USART_STD_BAUD_3M 			3000000
+// USAGE: --- @I2C_CLOCK_SOURCE ---
 
-// USAGE: --- @USART_PARITY_CONTROL ---
+#define I2C_CLOCK_SRC_BUSCLK          0U
+#define I2C_CLOCK_SRC_MFCLK           1U
 
-#define USART_PARITY_EN_ODD			2
-#define USART_PARITY_EN_EVEN			1
-#define USART_PARITY_DISABLE			0
+// USAGE: --- @I2C_CLOCK_PRESCALE ---
 
-// USAGE: --- @USART_WORD_LENGTH ---
+#define I2C_CLOCK_PRESCALE_DIV_1      0U
+#define I2C_CLOCK_PRESCALE_DIV_2      1U
+#define I2C_CLOCK_PRESCALE_DIV_3      2U
+#define I2C_CLOCK_PRESCALE_DIV_4      3U
+#define I2C_CLOCK_PRESCALE_DIV_5      4U
+#define I2C_CLOCK_PRESCALE_DIV_6      5U
+#define I2C_CLOCK_PRESCALE_DIV_7      6U
+#define I2C_CLOCK_PRESCALE_DIV_8      7U
 
-#define USART_WORDLEN_8BITS			0
-#define USART_WORDLEN_9BITS			1
+// USAGE: --- @I2C_TIMER_PERIOD ---
 
-// USAGE: --- @USART_NO_STOP_BITS ---
+#define I2C_TIMER_PERIOD_MIN          0U
+#define I2C_TIMER_PERIOD_MAX          127U
 
-#define USART_STOPBITS_1			0
-#define USART_STOPBITS_0_5			1
-#define USART_STOPBITS_1_5			2
-#define USART_STOPBITS_2			3
+// USAGE: --- @I2C_ADDRESSING_MODE ---
 
-// USAGE: --- @USART_HW_FLOW_CONTROL ---
+#define I2C_ADDRESSING_MODE_7BIT      0U
+#define I2C_ADDRESSING_MODE_10BIT     1U
 
-#define USART_HW_FLOW_CTRL_NONE			0
-#define USART_HW_FLOW_CTRL_CTS			1
-#define USART_HW_FLOW_CTRL_RTS			2
-#define USART_HW_FLOW_CTRL_CTS_RTS		3
+// USAGE: --- @I2C_OWN_ADDRESS ---
 
-// NOTE: --- USART Flags ---
+#define I2C_OWN_ADDRESS_MIN           0x000U
+#define I2C_OWN_ADDRESS_7BIT_MAX      0x07FU
+#define I2C_OWN_ADDRESS_10BIT_MAX     0x3FFU
 
-#define USART_FLAG_PE				0
-#define USART_FLAG_FE				1
-#define USART_FLAG_NF				2
-#define USART_FLAG_ORE				3
-#define USART_FLAG_IDLE				4
-#define USART_FLAG_RXNE				5
-#define USART_FLAG_TC				6
-#define USART_FLAG_TXE				7
-#define USART_FLAG_LBD				8
-#define USART_FLAG_CTS				9
+// USAGE: --- @I2C_ENABLE_GLITCH_FILTER ---
 
-// NOTE: --- Application states ---
+#define I2C_GLITCH_FILTER_DISABLE     0U
+#define I2C_GLITCH_FILTER_ENABLE      1U
 
-#define USART_READY				0
-#define USART_BUSY_IN_RX			1
-#define USART_BUSY_IN_TX			2
+// USAGE: --- @I2C_CLOCK_STRETCH ---
 
-// NOTE: --- Application events ---
+#define I2C_CLOCK_STRETCH_DISABLE     0U
+#define I2C_CLOCK_STRETCH_ENABLE      1U
 
-#define USART_EVENT_TX_CMPLT			0
-#define	USART_EVENT_RX_CMPLT			1
-#define	USART_EVENT_IDLE			2
-#define	USART_EVENT_CTS				3
-#define	USART_EVENT_PE				4
-#define	USART_ERR_FE				5
-#define	USART_ERR_NE				6
-#define	USART_ERR_ORE				7
+// NOTE: --- I2C Validation macros ---
 
-// NOTE: --- Bit position definitions USART_SR ---
+#define VALIDATE_I2C_PORT(port) do {                              \
+    if ((port) == NULL) {                                         \
+        return I2C_ERROR_NULL_PTR;                                \
+    }                                                             \
+    if (((port) != I2C0) && ((port) != I2C1)) {                   \
+        return I2C_ERROR_INVALID_PORT;                            \
+    }                                                             \
+} while (0)
+#define VALIDATE_I2C_DEVICE_MODE(mode)          VALIDATE_ENUM((mode), I2C_DEVICE_MODE_TARGET,I2C_ERROR_INVALID_MODE)
+#define VALIDATE_I2C_ADDRESSING_MODE(mode)          VALIDATE_ENUM((mode), I2C_ADDRESSING_MODE_10BIT,I2C_ERROR_INVALID_ADDR_MODE)
+#define VALIDATE_I2C_CLOCK_SOURCE(src)          VALIDATE_ENUM((src), I2C_CLOCK_SRC_MFCLK, I2C_ERROR_INVALID_CLOCK_SRC)
+#define VALIDATE_I2C_CLOCK_PRESCALE(prescale)   VALIDATE_ENUM((prescale), I2C_CLOCK_PRESCALE_DIV_8,I2C_ERROR_INVALID_CLKDIV)
+#define VALIDATE_I2C_TIMER_PERIOD(period) do {        \
+    if ((period) > I2C_TIMER_PERIOD_MAX) {            \
+        return I2C_ERROR_INVALID_SPEED;               \
+    }                                                  \
+} while (0)
+#define VALIDATE_I2C_ADDRESS(addr, addr_mode) do {             \
+    if (((addr_mode) == I2C_ADDRESSING_MODE_7BIT) &&           \
+        ((addr) > I2C_OWN_ADDRESS_7BIT_MAX)) {                 \
+        return I2C_ERROR_INVALID_ADDRESS;                      \
+    }                                                          \
+    if (((addr_mode) == I2C_ADDRESSING_MODE_10BIT) &&          \
+        ((addr) > I2C_OWN_ADDRESS_10BIT_MAX)) {                \
+        return I2C_ERROR_INVALID_ADDRESS;                      \
+    }                                                          \
+} while (0)
+#define VALIDATE_I2C_LEN(len) do {                     \
+    if ((len) == 0U) {                                 \
+        return I2C_ERROR_INVALID_LEN;                  \
+    }                                                   \
+} while (0)
 
-#define USART_SR_PE				0
-#define USART_SR_FE				1
-#define USART_SR_NF				2
-#define USART_SR_ORE				3
-#define USART_SR_IDLE				4
-#define USART_SR_RXNE				5
-#define USART_SR_TC				6
-#define USART_SR_TXE				7
-#define USART_SR_LBD				8
-#define USART_SR_CTS				9
+// NOTE: --- Bit position definitions I2C_CSA ---
 
-// NOTE: --- USART CR1 Interrupt macros ---
+#define I2C_CSA_DIR_STATE			0U
+#define I2C_CSA_TADDR_STATE			1U
+#define I2C_CSA_CMODE_STATE			15U
 
-#define USART_CR1_RXNEIE			5
-#define USART_CR1_TCIE				6
-#define USART_CR1_TXEIE				7
-#define USART_CR1_UE				13
+#define I2C_CSA_DIR				(1U << I2C_CSA_DIR_STATE)
+#define I2C_CSA_CMODE				(1U << I2C_CSA_CMODE_STATE)
 
-// NOTE:  --- Bit position definitions USART_CR1 ---
+// NOTE: --- Bit position definitions I2C_CCTR ---
 
-#define USART_CR1_SBK				0
-#define USART_CR1_RWU				1
-#define USART_CR1_RE				2
-#define USART_CR1_TE				3
-#define USART_CR1_IDLEIE			4
-#define USART_CR1_RXNEIE			5
-#define USART_CR1_TCIE				6
-#define USART_CR1_TXEIE				7
-#define USART_CR1_PEIE				8
-#define USART_CR1_PS				9
-#define USART_CR1_PCE				10
-#define USART_CR1_WAKE				11
-#define USART_CR1_M				12
-#define USART_CR1_UE				13
-#define USART_CR1_OVER8				15
+#define I2C_CCTR_BURSTRUN_STATE			0U
+#define I2C_CCTR_START_STATE			1U
+#define I2C_CCTR_STOP_STATE			2U
+#define I2C_CCTR_ACK_STATE			3U
+#define I2C_CCTR_CACKOEN_STATE			4U
+#define I2C_CCTR_RD_ON_TXEMPTY_STATE		5U
+#define I2C_CCTR_CBLEN_STATE			16U
 
+#define I2C_CCTR_BURSTRUN			(1U << I2C_CCTR_BURSTRUN_STATE)
+#define I2C_CCTR_START				(1U << I2C_CCTR_START_STATE)
+#define I2C_CCTR_STOP				(1U << I2C_CCTR_STOP_STATE)
+#define I2C_CCTR_ACK				(1U << I2C_CCTR_ACK_STATE)
+#define I2C_CCTR_CACKOEN			(1U << I2C_CCTR_CACKOEN_STATE)
+#define I2C_CCTR_RD_ON_TXEMPTY			(1U << I2C_CCTR_RD_ON_TXEMPTY_STATE)
 
-// NOTE: --- Bit position definitions USART_CR2 ---
+// NOTE: --- Bit position definitions I2C_CSR ---
 
-#define USART_CR2_ADD				0
-#define USART_CR2_LBDL				5
-#define USART_CR2_LBDIE				6
-#define USART_CR2_LBCL				8
-#define USART_CR2_CPHA				9
-#define USART_CR2_CPOL				10
-#define USART_CR2_CLKEN				11
-#define USART_CR2_STOP_1			12
-#define USART_CR2_STOP_2			13
-#define USART_CR2_LINEN				14
+#define I2C_CSR_BUSY_STATE			0U
+#define I2C_CSR_ERR_STATE			1U
+#define I2C_CSR_ADRACK_STATE			2U
+#define I2C_CSR_DATACK_STATE			3U
+#define I2C_CSR_ARBLST_STATE			4U
+#define I2C_CSR_IDLE_STATE			5U
+#define I2C_CSR_BUSBSY_STATE			6U
+#define I2C_CSR_CBCNT_STATE			16U
 
+#define I2C_CSR_BUSY				(1U << I2C_CSR_BUSY_STATE)
+#define I2C_CSR_ERR				(1U << I2C_CSR_ERR_STATE)
+#define I2C_CSR_ADRACK				(1U << I2C_CSR_ADRACK_STATE)
+#define I2C_CSR_DATACK				(1U << I2C_CSR_DATACK_STATE)
+#define I2C_CSR_ARBLST				(1U << I2C_CSR_ARBLST_STATE)
+#define I2C_CSR_IDLE				(1U << I2C_CSR_IDLE_STATE)
+#define I2C_CSR_BUSBSY				(1U << I2C_CSR_BUSBSY_STATE)
 
-// NOTE: --- Bit position definitions USART_CR3 ---
+// NOTE: --- Bit position definitions I2C_CCR ---
 
-#define USART_CR3_EIE				0
-#define USART_CR3_IREN				1
-#define USART_CR3_IRLP				2
-#define USART_CR3_HDSEL				3
-#define USART_CR3_NACK				4
-#define USART_CR3_SCEN				5
-#define USART_CR3_DMAR				6
-#define USART_CR3_DMAT				7
-#define USART_CR3_RTSE				8
-#define USART_CR3_CTSE				9
-#define USART_CR3_CTSIE				10
-#define USART_CR3_ONEBIT			11
+#define I2C_CCR_ACTIVE_STATE			0U
+#define I2C_CCR_MCTL_STATE			1U
+#define I2C_CCR_CLKSTRETCH_STATE		2U
+#define I2C_CCR_LPBK_STATE			8U
 
-// NOTE: --- USART Validation macros ---
+#define I2C_CCR_ACTIVE				(1U << I2C_CCR_ACTIVE_STATE)
+#define I2C_CCR_MCTL				(1U << I2C_CCR_MCTL_STATE)
+#define I2C_CCR_CLKSTRETCH			(1U << I2C_CCR_CLKSTRETCH_STATE)
+#define I2C_CCR_LPBK				(1U << I2C_CCR_LPBK_STATE)
 
-#define VALIDATE_USART_PORT(port)		do { \
-							if ((port) == NULL || \
-							!((port) == USART1 || (port) == USART2 || (port) == USART6)) { \
-								return USART_ERROR_INVALID_PORT; \
-							} \
-						} while(0)
+// NOTE: --- Bit position definitions I2C_TOAR ---
 
-#define VALIDATE_USART_MODE(mode)		VALIDATE_ENUM((mode), USART_MODE_TXRX, USART_ERROR_INVALID_MODE)
-#define VALIDATE_USART_STOP_BITS(stop)		VALIDATE_ENUM((stop), USART_STOPBITS_2, USART_ERROR_INVALID_STOP_BITS)
-#define VALIDATE_USART_WORD_LEN(wlen)		VALIDATE_ENUM((wlen), USART_WORDLEN_9BITS, USART_ERROR_INVALID_WORD_LENGTH)
-#define VALIDATE_USART_PARITY(parity)		VALIDATE_ENUM((parity), USART_PARITY_EN_ODD, USART_ERROR_INVALID_PARITY_CONTROL)
-#define VALIDATE_USART_HW_FLOW(flow)		VALIDATE_ENUM((flow), USART_HW_FLOW_CTRL_CTS_RTS, USART_ERROR_INVALID_HARDWARE_FLOW)
-#define VALIDATE_USART_BAUD_RATE(baud)		\
-						VALIDATE_IN_RANGE((baud), \
-						((const uint32_t[]){1200U, 2400U, 9600U, 19200U, 38400U, 57600U, \
-						 115200U, 230400U, 460800U, 921600U, 2000000U, 3000000U}) \
-						 , 12, USART_ERROR_INVALID_BAUD_RATE \
-						) \
+#define I2C_TOAR_OAR_STATE			0U
+#define I2C_TOAR_OAREN_STATE			14U
+#define I2C_TOAR_TMODE_STATE			15U
 
-#define VALIDATE_USART_ENABLED(port)		VALIDATE_BIT_SET((port)->CR1, USART_CR1_UE, USART_ERROR_NOT_ENABLED)
-#define VALIDATE_USART_TX_ENABLED(port)		VALIDATE_BIT_SET((port)->CR1, USART_CR1_TE, USART_ERROR_TX_NOT_ENABLED)
-#define VALIDATE_USART_RX_ENABLED(port)		VALIDATE_BIT_SET((port)->CR1, USART_CR1_RE, USART_ERROR_RX_NOT_ENABLED)
+#define I2C_TOAR_OAREN				(1U << I2C_TOAR_OAREN_STATE)
+#define I2C_TOAR_TMODE				(1U << I2C_TOAR_TMODE_STATE)
 
-// NOTE: --- APIs supported by this driver ---
+// NOTE: --- Bit position definitions I2C_TCTR ---
 
-// WARNING: For 8-bit word length ( USART_WORDLEN_8BITS ), p_tx_buffer / p_rx_buffer may be byte aligned
-// For 9-bit word length ( USART_WORDLEN_9BITS ), this driver treats the buffer as a array of uint16_t when parity
-// is disabled. The application MUST ensure that p_tx_buffer / p_rx_buffer are 16-bit aligned and that the length
-// passed corresponds to the number of BYTES, not words.
+#define I2C_TCTR_ACTIVE_STATE			0U
+#define I2C_TCTR_GENCALL_STATE			1U
+#define I2C_TCTR_TCLKSTRETCH_STATE		2U
+#define I2C_TCTR_TXEMPTY_ON_TREQ_STATE		3U
+#define I2C_TCTR_TXTRIG_TXMODE_STATE		4U
+#define I2C_TCTR_TXWAIT_STALE_TXFIFO_STATE	5U
+#define I2C_TCTR_RXFULL_ON_PREQ_STATE		6U
+#define I2C_TCTR_EN_DEFHOSTADR_STATE		7U
+#define I2C_TCTR_EN_ALRESPADR_STATE		8U
+#define I2C_TCTR_EN_DEFDEVADR_STATE		9U
+#define I2C_TCTR_TWUEN_STATE			10U
 
-// WARNING: Prefer to use USART_read_byte / USART_write_byte ( ring buffer based, easier and more efficent )
-// then other implementations
+#define I2C_TCTR_ACTIVE				(1U << I2C_TCTR_ACTIVE_STATE)
+#define I2C_TCTR_GENCALL			(1U << I2C_TCTR_GENCALL_STATE)
+#define I2C_TCTR_TCLKSTRETCH			(1U << I2C_TCTR_TCLKSTRETCH_STATE)
+#define I2C_TCTR_TXEMPTY_ON_TREQ		(1U << I2C_TCTR_TXEMPTY_ON_TREQ_STATE)
+#define I2C_TCTR_TXTRIG_TXMODE			(1U << I2C_TCTR_TXTRIG_TXMODE_STATE)
+#define I2C_TCTR_TXWAIT_STALE_TXFIFO		(1U << I2C_TCTR_TXWAIT_STALE_TXFIFO_STATE)
+#define I2C_TCTR_RXFULL_ON_PREQ			(1U << I2C_TCTR_RXFULL_ON_PREQ_STATE)
+#define I2C_TCTR_EN_DEFHOSTADR			(1U << I2C_TCTR_EN_DEFHOSTADR_STATE)
+#define I2C_TCTR_EN_ALRESPADR			(1U << I2C_TCTR_EN_ALRESPADR_STATE)
+#define I2C_TCTR_EN_DEFDEVADR			(1U << I2C_TCTR_EN_DEFDEVADR_STATE)
+#define I2C_TCTR_TWUEN				(1U << I2C_TCTR_TWUEN_STATE)
+
+// NOTE: --- Bit position definitions I2C_TSR ---
+
+#define I2C_TSR_RREQ_STATE			0U
+#define I2C_TSR_TREQ_STATE			1U
+#define I2C_TSR_RXMODE_STATE			2U
+#define I2C_TSR_OAR2SEL_STATE			3U
+#define I2C_TSR_QCMDST_STATE			4U
+#define I2C_TSR_QCMDRW_STATE			5U
+#define I2C_TSR_BUSBSY_STATE			6U
+#define I2C_TSR_TXMODE_STATE			7U
+#define I2C_TSR_STALE_TXFIFO_STATE		8U
+#define I2C_TSR_ADDRMATCH_STATE			9U
+
+#define I2C_TSR_RREQ				(1U << I2C_TSR_RREQ_STATE)
+#define I2C_TSR_TREQ				(1U << I2C_TSR_TREQ_STATE)
+#define I2C_TSR_RXMODE				(1U << I2C_TSR_RXMODE_STATE)
+#define I2C_TSR_OAR2SEL				(1U << I2C_TSR_OAR2SEL_STATE)
+#define I2C_TSR_QCMDST				(1U << I2C_TSR_QCMDST_STATE)
+#define I2C_TSR_QCMDRW				(1U << I2C_TSR_QCMDRW_STATE)
+#define I2C_TSR_BUSBSY				(1U << I2C_TSR_BUSBSY_STATE)
+#define I2C_TSR_TXMODE				(1U << I2C_TSR_TXMODE_STATE)
+#define I2C_TSR_STALE_TXFIFO			(1U << I2C_TSR_STALE_TXFIFO_STATE)
+#define I2C_TSR_ADDRMATCH			(1U << I2C_TSR_ADDRMATCH_STATE)
 
 // Peripheral clock setup
-USART_status_t USART_peri_clk_control(UART_Type* p_USART_x, uint8_t EN_or_DI);
+i2c_status_t i2c_peri_clk_control(i2c_type* p_i2c_x, uint8_t EN_or_DI);
 
 // Init / de-init
-USART_status_t USART_init(USART_Handle_t *p_USART_handle);
-USART_status_t USART_de_init(UART_Type* p_USART_x);
+i2c_status_t i2c_init(i2c_handle_t* p_i2c_handle);
+i2c_status_t i2c_de_init(i2c_type* p_i2c_x);
 
-// Data send / receive ( Ring buffer implementation )
-uint32_t USART_read_byte(USART_Handle_t* p_USART_handle, uint8_t* out);
-uint32_t USART_write_byte(USART_Handle_t* p_USART_handle, const uint8_t* data, uint32_t len);
+// Data send / receive ( polling )
+// Controller
+i2c_status_t i2c_controller_write_pl(
+		i2c_handle_t* p_i2c_handle,
+		uint16_t addr,
+                const uint8_t* p_tx_buffer,
+		uint32_t len,
+                uint32_t timeout
+		);
+i2c_status_t i2c_controller_read_pl(
+		i2c_handle_t* p_i2c_handle,
+		uint16_t addr,
+                uint8_t* p_rx_buffer,
+		uint32_t len,
+                uint32_t timeout
+		);
+i2c_status_t i2c_controller_write_read_pl(
+		i2c_handle_t* h,
+		uint16_t addr,
+                const uint8_t* wbuf,
+		uint32_t wlen,
+                uint8_t* rbuf,
+		uint32_t rlen,
+                uint32_t timeout
+		);
 
-// Data send / receive ( polling / interrupt ) 
-USART_status_t USART_write_data_pl(USART_Handle_t* p_USART_handle, const uint8_t* p_tx_buffer, uint32_t len);
-USART_status_t USART_read_data_pl(USART_Handle_t* p_USART_handle, uint8_t* p_rx_buffer, uint32_t len);
-USART_status_t USART_write_data_it(USART_Handle_t *p_USART_handle,uint8_t *p_tx_buffer, uint32_t len);
-USART_status_t USART_read_data_it(USART_Handle_t *p_USART_handle, uint8_t *p_rx_buffer, uint32_t len);
+// Target
+i2c_status_t i2c_target_write_pl(
+		i2c_handle_t* p_i2c_handle,
+		const uint8_t* p_tx_buffer,
+                uint32_t len,
+		uint32_t timeout
+		);
+i2c_status_t i2c_target_read_pl(
+		i2c_handle_t* p_i2c_handle,
+		uint8_t* p_tx_buffer,
+		uint32_t len,
+                uint32_t timeout
+		);
 
 // Peripheral control API
-USART_status_t USART_peri_control(UART_Type* p_USART_x, uint8_t EN_or_DI);
-uint8_t USART_get_flag_status(UART_Type* p_USART_x, uint8_t status_flag_name);
-void USART_clear_flag(UART_Type* p_USART_x, uint16_t status_flag_name);
-
-// IRQ configuration and ISR handling
-USART_status_t USART_irq_interrupt_config(uint8_t irq_n, uint8_t EN_or_DI);
-USART_status_t USART_irq_priority_config(uint8_t irq_n, uint32_t irq_prio);
-void USART_irq_handling(USART_Handle_t *p_USART_handle);
-
-// Utils
-USART_status_t USART_set_baud_rate(UART_Type* p_USART_x, uint32_t baud_rate);
-
-// Application callback
-void USART_application_event_callback(USART_Handle_t *p_USART_handle,USART_AppEvent_t app_ev);
-
+i2c_status_t i2c_peri_control(i2c_type* p_i2c_x, uint8_t EN_or_DI);
 
 #endif
