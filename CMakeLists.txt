@@ -15,6 +15,10 @@ add_executable(${PROJECT_NAME}
     src/mspm0g350x_system_init.c
     src/mspm0g350x_gpio.c
     src/mspm0g350x_iomux.c
+    src/mspm0g350x_systick.c
+    src/mspm0g350x_uart.c
+    src/mspm0g350x_spi.c
+    src/mspm0g350x_i2c.c
     src/main.c
 )
 

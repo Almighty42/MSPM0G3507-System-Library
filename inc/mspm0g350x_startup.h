@@ -23,6 +23,8 @@
 #define USART_PIN_RESET RESET
 
 #define READ_BIT(reg, bit) ((reg) & (1UL << (bit)))
+#define READ_FIELD(reg, ofs, width) \
+    (((reg) >> (ofs)) & ((1U << (width)) - 1U))
 #define IS_BIT_SET(reg, bit) (READ_BIT(reg, bit) != 0UL)
 
 #define CLEAR_BIT(reg, bit) ((reg) &= ~(1UL << (bit)))
@@ -597,7 +599,7 @@ typedef struct
 	uint32_t res3;
 	__R uint32_t MIS;
 	uint32_t res4;
-	__W1S ISET;
+	uint32_t __W1S ISET;
 	uint32_t res5;
 	__W1C uint32_t ICLR;
 	uint32_t res6;
