@@ -40,8 +40,8 @@ typedef struct
 	spi_config_t spi_config;					// Holds SPI peripheral configuration settings
 	uint8_t *p_tx_buffer;						// Stores application Tx buffer address
 	uint8_t *p_rx_buffer;						// Stores application Rx buffer address
-	uint32_t tx_len;						// Tx length
-	uint32_t rx_len;						// Rx length
+	uint32_t tx_frame_count;					// Tx length
+	uint32_t rx_frame_count;					// Rx length
 } spi_handle_t;
 
 typedef enum {
@@ -61,7 +61,7 @@ typedef enum {
 	SPI_ERROR_INVALID_MSB,						// MSB value out of range
 	SPI_ERROR_TIMEOUT,						// SPI polling timeout
 	SPI_ERROR_NOT_ENABLED,						// SPI not enabled, but has to be 
-	SPI_ERROR_INVALID_LEN,						// Len is invalid
+	SPI_ERROR_INVALID_FRAME_COUNT,					// Frame count is invalid
 	SPI_ERROR_RX_OVERFLOW,						// RX FIFO overflow detected
 	SPI_ERROR_TX_UNDERFLOW,						// TX FIFO underflow detected
 	SPI_BUSY							// SPI Tx / Rx busy
@@ -308,8 +308,8 @@ spi_status_t spi_init(spi_handle_t *p_spi_handle);
 spi_status_t spi_de_init(spi_type* p_spi_x);
 
 // Data send / receive ( polling ) 
-spi_status_t spi_write_data_pl(spi_handle_t* p_spi_handle, const uint8_t* p_tx_buffer, uint32_t len, uint32_t timeout);
-spi_status_t spi_read_data_pl(spi_handle_t* p_spi_handle, uint8_t* p_rx_buffer, uint32_t len, uint32_t timeout);
+spi_status_t spi_write_data_pl(spi_handle_t* p_spi_handle, const uint8_t* p_tx_buffer, uint32_t frame_count, uint32_t timeout);
+spi_status_t spi_read_data_pl(spi_handle_t* p_spi_handle, uint8_t* p_rx_buffer, uint32_t frame_count, uint32_t timeout);
 
 // Peripheral control API
 spi_status_t spi_peri_control(spi_type* p_spi_x, uint8_t EN_or_DI);

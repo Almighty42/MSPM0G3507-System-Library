@@ -583,8 +583,8 @@ typedef struct
     __R  uint32_t TPECSR;
 } i2c_type;
 
-#define I2C0_REGS ((i2c_type*)(I2C0_BASE_ADDR  + 0x800UL))
-#define I2C1_REGS ((i2c_type *)(I2C1_BASE_ADDR  + 0x800UL))
+#define I2C0 ((i2c_type*)(I2C0_BASE_ADDR  + 0x800UL))
+#define I2C1 ((i2c_type *)(I2C1_BASE_ADDR  + 0x800UL))
 
 // NOTE: --- Other Peripheral TypeDefs ---
 

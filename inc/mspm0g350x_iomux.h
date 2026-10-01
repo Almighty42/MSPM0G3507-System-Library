@@ -3,28 +3,79 @@
 
 #include <stdint.h>
 
-typedef struct {
-    uint8_t pincm_index;            // @IOMUX_PIN
-    uint8_t pf;                     // @IOMUX_PF
-    uint8_t connect;                // @IOMUX_PC
-    uint8_t pull;                   // @IOMUX_PUPD_CONTROL
-    uint8_t drive_strength;         // @IOMUX_DRIVE
-    uint8_t input_enable;           // @IOMUX_INPUT_STATE
-    uint8_t invert;                 // @IOMUX_INVERT Logic inversion
-    uint8_t open_drain;             // @IOMUX_DRAIN HIZ1
-} iomux_pin_config_t;
+// USAGE: --- @IOMUX_PC ---
 
-// Function return status
+typedef enum {
+    IOMUX_PC_DISCONNECT = 0,
+    IOMUX_PC_CONNECT = 1
+} iomux_pc_t;
+
+// USAGE: --- @IOMUX_PUPD_CONTROL ---
+
+typedef enum {
+    IOMUX_PULL_NONE = 0,
+    IOMUX_PULL_UP = 1,
+    IOMUX_PULL_DOWN = 2
+} iomux_pull_t;
+
+// USAGE: --- @IOMUX_DRIVE ---
+
+typedef enum {
+    IOMUX_DRIVE_LOW,
+    IOMUX_DRIVE_HIGH
+} iomux_drive_t;
+
+// USAGE: --- @IOMUX_INPUT_STATE
+
+typedef enum {
+    IOMUX_INPUT_DISABLE,
+    IOMUX_INPUT_ENABLE
+} iomux_input_state_t;
+
+// USAGE: --- @IOMUX_INVERT
+
+typedef enum {
+    IOMUX_INVERT_DISABLE = 0,
+    IOMUX_INVERT_ENABLE = 1
+} iomux_invert_t;
+
+// USAGE: --- @IOMUX_DRAIN
+
+typedef enum {
+    IOMUX_HIZ1_DISABLE = 0,
+    IOMUX_HIZ1_ENABLE = 1
+} iomux_hiz1_t;
+
+typedef uint8_t iomux_pincm_index_t;
+
+typedef uint8_t iomux_pf_t;
+
+// NOTE: --- Structures for IOMUX ---
+
+typedef struct {
+    iomux_pincm_index_t pincm_index;				// Possible values from @IOMUX_PIN
+    iomux_pf_t pf;						// Possible values from @IOMUX_PF
+    iomux_pc_t pad_connect;					// Possible values from @IOMUX_PC
+    iomux_pull_t pull;						// Possible values from @IOMUX_PUPD_CONTROL
+    iomux_drive_t drive_strength;				// Possible values from @IOMUX_DRIVE
+    iomux_input_state_t input_enable;				// Possible values from @IOMUX_INPUT_STATE
+    iomux_invert_t invert;					// Possible values from @IOMUX_INVERT Logic inversion
+    iomux_hiz1_t hiz1;						// Possible values from  @IOMUX_DRAIN HIZ1
+} iomux_config_t;
 
 typedef enum
 {
-    IOMUX_OK = 0,              
-    IOMUX_ERROR_NULL_PTR,      
-    IOMUX_ERROR_INVALID_PINCM_INDEX, 
-    IOMUX_ERROR_INVALID_PULL, 
-    IOMUX_ERROR_INVALID_PIN,   
-    IOMUX_ERROR_INVALID_DRIVE,  
-    IOMUX_ERROR_INVALID_STATE,  
+    IOMUX_OK = 0,							// Success
+    IOMUX_ERROR_NULL_PTR,						// NULL pointer passed
+    IOMUX_ERROR_INVALID_PIN,						// Invalid pin
+    IOMUX_ERROR_INVALID_PF,						// Invalid peripheral function
+    IOMUX_ERROR_INVALID_PC,						// Invalid pad connect
+    IOMUX_ERROR_INVALID_PUPD,						// Invalid PUPD
+    IOMUX_ERROR_INVALID_DRIVE,						// Invalid drive setting
+    IOMUX_ERROR_INVALID_INPUT,						// Invalid input state
+    IOMUX_ERROR_INVALID_INVERT,						// Invalid invert logic inversion
+    IOMUX_ERROR_INVALID_HIZ1,						// Invalid iomux hiz1 setting
+    IOMUX_ERROR_UNSUPPORTED_CONFIGURATION,				// Invalid IOMUX configuration
 } iomux_status_t;
 
 // USAGE: --- @IOMUX_PIN ---
@@ -179,7 +230,7 @@ typedef enum
 
 #define IOMUX_PIN_PA10_PF_GPIO                             0x01
 #define IOMUX_PIN_PA10_PF_UART0_TX                         0x02
-#define IOMUX_PIN_PA10_PF_SPI_POCI                         0x03
+#define IOMUX_PIN_PA10_PF_SPI0_POCI                        0x03
 #define IOMUX_PIN_PA10_PF_I2C0_SDA                         0x04
 #define IOMUX_PIN_PA10_PF_TIMA1_C0                         0x05
 #define IOMUX_PIN_PA10_PF_TIMG12_C0                        0x06
@@ -237,21 +288,21 @@ typedef enum
 #define IOMUX_PIN_PA16_PF_TIMA0_C2N                        0x07
 #define IOMUX_PIN_PA16_PF_FCC_IN                           0x08
 
-#define IOMUX_PIN_PA17_GPIO                                0x01
-#define IOMUX_PIN_PA17_UART1_TX                            0x02
-#define IOMUX_PIN_PA17_SPI1_SCK                            0x03
-#define IOMUX_PIN_PA17_I2C1_SCL                            0x04
-#define IOMUX_PIN_PA17_TIMA0_C3                            0x05
-#define IOMUX_PIN_PA17_TIMG7_C0                            0x06
-#define IOMUX_PIN_PA17_TIMA1_C0                            0x07
+#define IOMUX_PIN_PA17_PF_GPIO                             0x01
+#define IOMUX_PIN_PA17_PF_UART1_TX                         0x02
+#define IOMUX_PIN_PA17_PF_SPI1_SCK                         0x03
+#define IOMUX_PIN_PA17_PF_I2C1_SCL                         0x04
+#define IOMUX_PIN_PA17_PF_TIMA0_C3                         0x05
+#define IOMUX_PIN_PA17_PF_TIMG7_C0                         0x06
+#define IOMUX_PIN_PA17_PF_TIMA1_C0                         0x07
 
-#define IOMUX_PIN_PA18_GPIO                                0x01
-#define IOMUX_PIN_PA18_UART1_RX                            0x02
-#define IOMUX_PIN_PA18_SPI1_PICO                           0x03
-#define IOMUX_PIN_PA18_I2C1_SDA                            0x04
-#define IOMUX_PIN_PA18_TIMA0_C3N                           0x05
-#define IOMUX_PIN_PA18_TIMG7_C1                            0x06
-#define IOMUX_PIN_PA18_TIMA1_C1                            0x07
+#define IOMUX_PIN_PA18_PF_GPIO                             0x01
+#define IOMUX_PIN_PA18_PF_UART1_RX                         0x02
+#define IOMUX_PIN_PA18_PF_SPI1_PICO                        0x03
+#define IOMUX_PIN_PA18_PF_I2C1_SDA                         0x04
+#define IOMUX_PIN_PA18_PF_TIMA0_C3N                        0x05
+#define IOMUX_PIN_PA18_PF_TIMG7_C1                         0x06
+#define IOMUX_PIN_PA18_PF_TIMA1_C1                         0x07
 
 #define IOMUX_PIN_PA19_PF_GPIO                             0x01
 #define IOMUX_PIN_PA19_PF_SWDIO                            0x02
@@ -529,33 +580,28 @@ typedef enum
 #define IOMUX_PIN_PB26_PF_TIMA1_C0                          0x06
 
 #define IOMUX_PIN_PB27_PF_GPIO                              0x01
-#define IOMUX_PIN_PB27_PF_COMP2_OU                          0x02
+#define IOMUX_PIN_PB27_PF_COMP2_OUT                         0x02
 #define IOMUX_PIN_PB27_PF_SPI1_CS2                          0x03
 #define IOMUX_PIN_PB27_PF_TIMA0_C3N                         0x04
 #define IOMUX_PIN_PB27_PF_TIMG6_C1                          0x05
 #define IOMUX_PIN_PB27_PF_TIMA1_C1                          0x06
 
-// USAGE: --- @IOMUX_PC ---
+// NOTE: --- IOMUX Validation macros ---
 
-#define IOMUX_PC_DISCONNECT         0
-#define IOMUX_PC_CONNECT            1
+#define VALIDATE_IOMUX_PC(pc) VALIDATE_ENUM((pc), IOMUX_PC_CONNECT, IOMUX_ERROR_INVALID_PC)
+#define VALIDATE_IOMUX_PULL(pull) VALIDATE_ENUM((pull), IOMUX_PULL_DOWN, IOMUX_ERROR_INVALID_PUPD)
+#define VALIDATE_IOMUX_DRIVE(drive) VALIDATE_ENUM((drive), IOMUX_DRIVE_HIGH, IOMUX_ERROR_INVALID_DRIVE)
+#define VALIDATE_IOMUX_INPUT(input) VALIDATE_ENUM((input), IOMUX_INPUT_ENABLE, IOMUX_ERROR_INVALID_INPUT)
+#define VALIDATE_IOMUX_INVERT(inv) VALIDATE_ENUM((inv), IOMUX_INVERT_ENABLE, IOMUX_ERROR_INVALID_INVERT)
+#define VALIDATE_IOMUX_HIZ1(hiz1) VALIDATE_ENUM((hiz1), IOMUX_HIZ1_ENABLE, IOMUX_ERROR_INVALID_HIZ1)
+#define IOMUX_PINCM_ARRAY_INDEX(pincm_) ((uint32_t)(pincm_) - 1U)
+#define IOMUX_SET_BIT_IF_ENABLED(reg_, cond_, pos_) \
+    do {                                            \
+        if ((cond_)) {                              \
+            (reg_) |= (1UL << (pos_));              \
+        }                                           \
+    } while (0)
 
-// USAGE: --- @IOMUX_PUPD_CONTROL ---
-
-#define IOMUX_PULL_NONE             0
-#define IOMUX_PULL_UP               1
-#define IOMUX_PULL_DOWN             2
-
-// USAGE --- @IOMUX_DRIVE ---
-
-#define IOMUX_DRIVE_LOW             0
-#define IOMUX_DRIVE_HIGH            0
-
-// USAGE --- @IOMUX_INPUT_STATE
-
-#define IOMUX_STATE_DISABLE         0
-#define IOMUX_STATE_ENABLE          1
-
-void iomux_configure_pin(const iomux_pin_config_t *cfg);
+iomux_status_t iomux_configure_pin(const iomux_config_t *cfg);
 
 #endif

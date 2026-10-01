@@ -1,7 +1,7 @@
 #ifndef MSPM0G3507_I2C_DRIVER_H
 #define MSPM0G3507_I2C_DRIVER_H
 
-#include "mspm0g350x_startup.h"
+#include "../inc/mspm0g350x_startup.h"
 #include <stdint.h>
 
 // NOTE: --- Structures for I2C ---

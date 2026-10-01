@@ -11,25 +11,36 @@ typedef enum {
 	GPIO_DIR_OUTPUT = 1,
 } gpio_direction_t;
 
-typedef struct
-{
-	gpio_type* port;            // @gpio_type from mspm0g350x_startup.h
-	uint8_t dio_bit;            // @DIO_NUM
-	gpio_direction_t direction; // @GPIO_DIRECTION
-} gpio_pin_config_t;
-
-// Function return status
+// USAGE: --- @GPIO_LEVEL ---
 
 typedef enum {
-	GPIO_OK = 0,              // Success
-	GPIO_ERROR_INVALID_STATE, // Invalid state of a argument
-	GPIO_ERROR_NULL_PTR,      // NULL pointer passed
-	GPIO_ERROR_INVALID_PIN,   // Pin number > 15
-	GPIO_ERROR_INVALID_PORT,  // Invalid GPIO port address
-	GPIO_ERROR_INVALID_MODE,  // Mode value out of range
-	GPIO_ERROR_INVALID_IRQ,   // Invalid IRQ number
-	GPIO_ERROR_LOCK_FAILED,   // Failed to lock GPIO configuration
+    GPIO_LEVEL_LOW = 0,
+    GPIO_LEVEL_HIGH = 1
+} gpio_level_t;
+
+// Pin number within a part, 0..31. Depends on the port
+typedef uint8_t gpio_dio_t;
+
+typedef struct
+{
+	gpio_type* p_GPIOx;					// Holds the base address of the SPI peripheral 
+	gpio_dio_t dio_bit;					// Possible values from @DIO_NUM
+	gpio_direction_t direction;				// Possible values from @GPIO_DIRECTION
+	gpio_level_t level;					// Possible values from @GPIO_LEVEL
+} gpio_config_t;
+
+typedef enum {
+	GPIO_OK = 0,						// Success
+	GPIO_ERROR_INVALID_STATE,				// Invalid state of a argument
+	GPIO_ERROR_NULL_PTR,					// NULL pointer passed
+	GPIO_ERROR_INVALID_PIN,					// Pin number > 15
+	GPIO_ERROR_INVALID_PORT,				// Invalid GPIO port address
+	GPIO_ERROR_INVALID_MODE,				// Mode value out of range
+	GPIO_ERROR_INVALID_IRQ,					// Invalid IRQ number
+	GPIO_ERROR_LOCK_FAILED,					// Failed to lock GPIO configuration
+	GPIO_ERROR_INVALID_LEVEL				// Can only be HIGH or LOW
 } gpio_status_t;
+
 
 // USAGE: --- @GPIO_PORT ---
 
@@ -71,11 +82,24 @@ typedef enum {
 #define GPIO_DIO30 30
 #define GPIO_DIO31 31
 
+// NOTE: --- GPIO pin implementation masks ---
+
+#define GPIO_PORT_MAX_DIO			31
+#define GPIO_PORTA_DIO_MASK			0xFFFFFFFFUL
+#define GPIO_PORTB_DIO_MASK			0x0FFFFFFFUL 
+
+// NOTE: --- GPIO Validation macros ---
+
+#define VALIDATE_GPIO_DIRECTION(dir) \
+    VALIDATE_ENUM((dir), GPIO_DIR_OUTPUT, GPIO_ERROR_INVALID_DIRECTION)
+#define VALIDATE_GPIO_LEVEL(lvl) \
+    VALIDATE_ENUM((lvl), GPIO_LEVEL_HIGH, GPIO_ERROR_INVALID_LEVEL)
+
 gpio_status_t gpio_enable_power(gpio_type* port);
 gpio_status_t gpio_disable_power(gpio_type* port);
 gpio_status_t gpio_toggle(gpio_type* port, uint8_t dio_bit);
-gpio_status_t gpio_configure_pin(const gpio_pin_config_t* cfg);
-gpio_status_t gpio_write(gpio_type* port, uint8_t dio_bit, uint8_t level);
-gpio_status_t gpio_read(gpio_type* port, uint8_t dio_bit, uint8_t* level);
+gpio_status_t gpio_configure_pin(const gpio_config_t* cfg);
+gpio_status_t gpio_write(gpio_type* p_gpio_x, uint8_t dio_bit, gpio_level_t level);
+gpio_status_t gpio_read(gpio_type* p_gpio_x, uint8_t dio_bit, gpio_level_t * level);
 
 #endif
