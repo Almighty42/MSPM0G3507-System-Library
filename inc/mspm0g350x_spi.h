@@ -20,6 +20,7 @@ typedef struct
 	uint8_t SPI_CPOL;						// Possible values from @SPI_CPOL
 	uint8_t SPI_CPHA;						// Possible values from @SPI_CPHA
 	uint8_t SPI_CS_Select;						// Possible values from @SPI_CS_SELECT
+	uint8_t SPI_Frame_Format_Select;				// Possible values from @SPI_FRAME_FORMAT
 	uint8_t SPI_MSB;						// Possible values from @SPI_MSB
 } spi_config_t;
 
@@ -47,6 +48,7 @@ typedef enum {
 	SPI_ERROR_INVALID_CPOL,						// CPOL value out of range
 	SPI_ERROR_INVALID_CPHA,						// CPHA value out of range
 	SPI_ERROR_INVALID_CS,						// CS value out of range
+	SPI_ERROR_INVALID_FRAME_FORMAT,					// Frame format out of range
 	SPI_ERROR_INVALID_MSB,						// MSB value out of range
 	SPI_ERROR_TIMEOUT,						// SPI polling timeout
 	SPI_ERROR_NOT_ENABLED,						// SPI not enabled, but has to be 
@@ -108,10 +110,17 @@ typedef enum {
 #define SPI_CS_0				0
 #define SPI_CS_1				1
 
+// USAGE: --- @SPI_FRAME_FORMAT ---
+
+#define SPI_FRAMEFORMAT_3WIRE			0
+#define SPI_FRAMEFORMAT_4WIRE			1
+#define SPI_FRAMEFORMAT_TISYNC			2
+#define SPI_FRAMEFORMAT_MICROWIRE		3
+
 // USAGE: --- @SPI_MSB ---
 
-#define SPI_MSB_MSB				0
-#define SPI_MSB_LSB				1
+#define SPI_MSB_MSB				1
+#define SPI_MSB_LSB				0
 
 // NOTE: --- SPI Validation macros ---
 
@@ -121,7 +130,8 @@ typedef enum {
         return SPI_ERROR_INVALID_PORT; \
     } \
 } while(0)
-#define VALIDATE_SPI_DEVICE_MODE(mode)		VALIDATE_ENUM((mode), SPI_DEVICE_MODE_PERIPHERAL, SPI_ERROR_INVALID_MODE)
+#define VALIDATE_SPI_DEVICE_MODE(mode) \
+    VALIDATE_ENUM((mode), SPI_DEVICE_MODE_CONTROLLER, SPI_ERROR_INVALID_MODE)
 #define VALIDATE_SPI_CLOCK_SRC(src) 		VALIDATE_ENUM((src), SPI_CLOCK_SRC_LFCLK, SPI_ERROR_INVALID_CLOCK_SRC)
 #define VALIDATE_SPI_CLOCK_DIVIDE_RATIO(ratio)	VALIDATE_ENUM((ratio), SPI_SCLK_SPEED_DIV_8, SPI_ERROR_INVALID_CLK_DIV)
 #define VALIDATE_SPI_CLOCK_PRESCALER(prescaler)	VALIDATE_ENUM((prescaler), 1023, SPI_ERROR_INVALID_CLK_PRESC)
@@ -133,7 +143,12 @@ typedef enum {
 #define VALIDATE_SPI_CPOL(flow)			VALIDATE_ENUM((flow), SPI_CPOL_HIGH, SPI_ERROR_INVALID_CPOL)
 #define VALIDATE_SPI_CPHA(flow)			VALIDATE_ENUM((flow), SPI_CPHA_HIGH, SPI_ERROR_INVALID_CPHA)
 #define VALIDATE_SPI_CS_SELECTOR(cs_sel)	VALIDATE_ENUM((cs_sel), SPI_CS_1, SPI_ERROR_INVALID_CS)
-#define VALIDATE_SPI_MSB(msb)			VALIDATE_ENUM((msb), SPI_MSB_LSB, SPI_ERROR_INVALID_MSB)
+#define VALIDATE_SPI_FRAME_FORMAT(frame_format)	VALIDATE_ENUM((frame_format), SPI_FRAMEFORMAT_MICROWIRE, SPI_ERROR_INVALID_FRAME_FORMAT)
+#define VALIDATE_SPI_MSB(msb) do { \
+    if ((msb) != SPI_MSB_MSB && (msb) != SPI_MSB_LSB) { \
+        return SPI_ERROR_INVALID_MSB; \
+    } \
+} while (0)
 #define VALIDATE_SPI_ENABLED(port) 		VALIDATE_BIT_SET((port)->CTL1, SPI_CTL1_ENABLE, SPI_ERROR_NOT_ENABLED)
 
 // NOTE: --- SPI_PWREN bitfields ---
@@ -143,7 +158,7 @@ typedef enum {
 
 #define SPI_PWREN_KEY			24U
 #define SPI_PWREN_KEY_WIDTH		8U
-#define SPI_PWREN_KEY_VAL_UNLOCK	((uint32_t)0x0000001AU)
+#define SPI_PWREN_KEY_VAL_UNLOCK	((uint32_t)0x00000026U)
 #define SPI_PWREN_KEY_VAL_LOCK		((uint32_t)0x00000000U)
 
 // NOTE: --- SPI_CLKDIV bitfields ---

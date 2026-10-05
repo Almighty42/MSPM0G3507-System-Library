@@ -9,7 +9,6 @@ void SysTick_Handler(void)
 
 int main(void)
 {
-
 	spi_handle_t spi = {0};
 
 	spi.p_SPIx = SPI1;
@@ -21,6 +20,7 @@ int main(void)
 	spi.spi_config.SPI_CPOL = SPI_CPOL_HIGH;
 	spi.spi_config.SPI_CPHA = SPI_CPHA_HIGH;
 	spi.spi_config.SPI_CS_Select = SPI_CS_0;
+	spi.spi_config.SPI_Frame_Format_Select = SPI_FRAMEFORMAT_4WIRE;
 	spi.spi_config.SPI_MSB = SPI_MSB_MSB;
 
 	static const iomux_config_t spi1_sck_cfg = {

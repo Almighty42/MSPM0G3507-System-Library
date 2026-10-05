@@ -1,4 +1,4 @@
 {
-    "cortex-debug.variableUseNaturalFormat": true,
+    "cortex-debug.variableUseNaturalFormat": false,
     "C_Cpp.debugShortcut": false
 }

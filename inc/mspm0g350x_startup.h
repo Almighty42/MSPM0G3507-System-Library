@@ -475,8 +475,8 @@ typedef struct
     __RW uint32_t TXDATA;
 } spi_type;
 
-#define SPI0	((spi_type *)SPI0_BASE_ADDR )
-#define SPI1	((spi_type *)SPI1_BASE_ADDR )
+#define SPI0 ((spi_type *)(SPI0_BASE_ADDR + 0x800UL))
+#define SPI1 ((spi_type *)(SPI1_BASE_ADDR + 0x800UL))
 
 typedef struct
 {

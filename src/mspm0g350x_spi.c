@@ -98,6 +98,8 @@ static inline void spi_set_data_width(spi_type* port, uint8_t data_width);
 static inline void spi_set_cpol(spi_type* port, uint8_t cpol);
 static inline void spi_set_cpha(spi_type* port, uint8_t cpha);
 static inline void spi_set_cs_selector(spi_type* port, uint8_t cs_selector);
+static inline void spi_set_frame_format(spi_type* port,
+                                        uint8_t frame_format_select);
 static inline void spi_set_msb(spi_type* port, uint8_t msb);
 
 /********************************************************************************
@@ -150,6 +152,10 @@ spi_status_t spi_init(spi_handle_t* p_spi_handle)
 	uint8_t cs_selector = p_spi_handle->spi_config.SPI_CS_Select;
 	VALIDATE_SPI_CS_SELECTOR(cs_selector);
 
+	// Frame format selector
+	uint8_t frame_format = p_spi_handle->spi_config.SPI_Frame_Format_Select;
+	VALIDATE_SPI_FRAME_FORMAT(frame_format);
+
 	// MSB
 	uint8_t msb = p_spi_handle->spi_config.SPI_MSB;
 	VALIDATE_SPI_MSB(msb);
@@ -170,6 +176,7 @@ spi_status_t spi_init(spi_handle_t* p_spi_handle)
 	spi_set_cpol(p_spi_handle->p_SPIx, cpol);
 	spi_set_cpha(p_spi_handle->p_SPIx, cpha);
 	spi_set_cs_selector(p_spi_handle->p_SPIx, cs_selector);
+	spi_set_frame_format(p_spi_handle->p_SPIx, frame_format);
 	spi_set_msb(p_spi_handle->p_SPIx, msb);
 
 	SET_BIT(port->CTL1, SPI_CTL1_ENABLE);
@@ -229,6 +236,13 @@ static inline void spi_set_cs_selector(spi_type* port, uint8_t cs_selector)
 {
 	WRITE_FIELD(port->CTL0, SPI_CTL0_CSSEL, SPI_CTL0_CSSEL_WIDTH,
 	            cs_selector);
+}
+
+static inline void spi_set_frame_format(spi_type* port,
+                                        uint8_t frame_format_select)
+{
+	WRITE_FIELD(port->CTL0, SPI_CTL0_FRF, SPI_CTL0_FRF_WIDTH,
+	            frame_format_select);
 }
 
 static inline void spi_set_msb(spi_type* port, uint8_t msb)
@@ -354,6 +368,7 @@ spi_status_t spi_write_data_pl(spi_handle_t* p_spi_handle,
 	if (frame_count == 0) {
 		return SPI_ERROR_INVALID_FRAME_COUNT;
 	}
+	VALIDATE_SPI_ENABLED(p_spi_handle->p_SPIx);
 
 	//     Confirm the configured frame width matches the buffer type.
 	uint32_t dss = READ_FIELD(p_spi_handle->p_SPIx->CTL0, SPI_CTL0_DSS,
@@ -431,7 +446,7 @@ static spi_status_t spi_transceive_pl(spi_handle_t* p_spi_handle,
 			return status;
 		}
 
-		uint32_t rx_frame = (uint8_t)p_spi_x->RXDATA;
+		uint8_t rx_frame = (uint8_t)p_spi_x->RXDATA;
 		if (p_rx_buffer != NULL) {
 			p_rx_buffer[i] = rx_frame;
 		}
