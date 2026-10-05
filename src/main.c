@@ -23,40 +23,40 @@ int main(void)
 	spi.spi_config.SPI_CS_Select = SPI_CS_0;
 	spi.spi_config.SPI_MSB = SPI_MSB_MSB;
 
-	static const iomux_pin_config_t spi1_sck_cfg = {
+	static const iomux_config_t spi1_sck_cfg = {
 	    .pincm_index = IOMUX_PIN_PB23,
 	    .pf = IOMUX_PIN_PB23_PF_SPI1_SCK,
-	    .connect = IOMUX_PC_CONNECT,
+	    .pad_connect = IOMUX_PC_CONNECT,
 	    .pull = IOMUX_PULL_UP,
 	    .drive_strength = IOMUX_DRIVE_HIGH,
-	    .input_enable = IOMUX_STATE_DISABLE,
+	    .input_enable = IOMUX_INPUT_DISABLE,
 	};
 
-	static const iomux_pin_config_t spi1_pico_cfg = {
+	static const iomux_config_t spi1_pico_cfg = {
 	    .pincm_index = IOMUX_PIN_PB22,
 	    .pf = IOMUX_PIN_PB22_PF_SPI1_PICO,
-	    .connect = IOMUX_PC_CONNECT,
+	    .pad_connect = IOMUX_PC_CONNECT,
 	    .pull = IOMUX_PULL_NONE,
 	    .drive_strength = IOMUX_DRIVE_HIGH,
-	    .input_enable = IOMUX_STATE_DISABLE,
+	    .input_enable = IOMUX_INPUT_DISABLE,
 	};
 
-	static const iomux_pin_config_t spi1_poci_cfg = {
+	static const iomux_config_t spi1_poci_cfg = {
 	    .pincm_index = IOMUX_PIN_PB21,
 	    .pf = IOMUX_PIN_PB21_PF_SPI1_POCI,
-	    .connect = IOMUX_PC_CONNECT,
+	    .pad_connect = IOMUX_PC_CONNECT,
 	    .pull = IOMUX_PULL_NONE,
 	    .drive_strength = IOMUX_DRIVE_HIGH,
-	    .input_enable = IOMUX_STATE_ENABLE,
+	    .input_enable = IOMUX_INPUT_ENABLE,
 	};
 
-	static const iomux_pin_config_t spi1_cs0_cfg = {
+	static const iomux_config_t spi1_cs0_cfg = {
 	    .pincm_index = IOMUX_PIN_PB20,
 	    .pf = IOMUX_PIN_PB20_PF_SPI1_CS0,
-	    .connect = IOMUX_PC_CONNECT,
+	    .pad_connect = IOMUX_PC_CONNECT,
 	    .pull = IOMUX_PULL_UP,
 	    .drive_strength = IOMUX_DRIVE_HIGH,
-	    .input_enable = IOMUX_STATE_DISABLE,
+	    .input_enable = IOMUX_INPUT_DISABLE,
 	};
 
 	iomux_configure_pin(&spi1_sck_cfg);
