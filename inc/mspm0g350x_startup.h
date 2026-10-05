@@ -25,6 +25,7 @@
 #define CLEAR_BIT(reg, bit) ((reg) &= ~(1UL << (bit)))
 #define SET_BIT(reg, bit) ((reg) |= (1UL << (bit)))
 #define TOGGLE_BIT(reg, bit) ((reg) ^= (1UL << (bit)))
+#define READ_BIT(reg, bit)  ((((uint32_t)(reg)) >> (bit)) & 1U)
 
 #define FIELD_MASK_(width)  (UINT32_MAX >> (32U - (width)))   /* internal, width 1..32 */
 

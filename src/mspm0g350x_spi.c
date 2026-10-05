@@ -1,6 +1,7 @@
 #include "../inc/mspm0g350x_spi.h"
 #include "../inc/mspm0g350x_startup.h"
 #include "../inc/mspm0g350x_systick.h"
+#include <stdint.h>
 
 /********************************************************************************
  *
@@ -46,16 +47,15 @@ spi_status_t spi_peri_clk_control(spi_type* p_spi_x, uint8_t EN_or_DI)
 	VALIDATE_SPI_PORT(p_spi_x);
 
 	spi_status_t status = SPI_ERROR_INVALID_PORT;
+	uint32_t pwren = 0U;
 
 	if (EN_or_DI == ENABLE) {
-		if (p_spi_x == SPI1) {
-		}
-		else if (p_spi_x == SPI0) {
-		}
-
 		// Enabling PWREN
-		p_spi_x->PWREN =
-		    SPI_PWREN_KEY_UNLOCK_W | SPI_PWREN_ENABLE_ENABLE;
+		WRITE_FIELD(pwren, SPI_PWREN_KEY, SPI_PWREN_KEY_WIDTH,
+		            SPI_PWREN_KEY_VAL_UNLOCK);
+		WRITE_FIELD(pwren, SPI_PWREN_ENABLE, SPI_PWREN_ENABLE_WIDTH,
+		            ENABLE);
+		p_spi_x->PWREN = pwren;
 
 		sys_delay_cpu_cycles(4U * sys_clock_get_ulpclk_divider());
 
@@ -63,18 +63,20 @@ spi_status_t spi_peri_clk_control(spi_type* p_spi_x, uint8_t EN_or_DI)
 	}
 	else {
 		uint32_t i = 0;
-		while (IS_BIT_SET(p_spi_x->STAT1, SPI_SR_BUSY_STATE)) {
-			if (i < SPI_SOFTWARE_TIMEOUT)
-				i++;
-			else
+		while (IS_BIT_SET(p_spi_x->STAT1, SPI_STAT1_BUSY)) {
+			if (i++ >= SPI_SOFTWARE_TIMEOUT) {
 				return SPI_BUSY;
+			}
 		}
 
 		CLEAR_BIT(p_spi_x->CTL1, SPI_CTL1_ENABLE);
 
 		// Clearing PWREN
-		p_spi_x->PWREN =
-		    SPI_PWREN_KEY_UNLOCK_W | SPI_PWREN_ENABLE_DISABLE;
+		WRITE_FIELD(pwren, SPI_PWREN_KEY, SPI_PWREN_KEY_WIDTH,
+		            SPI_PWREN_KEY_VAL_UNLOCK);
+		WRITE_FIELD(pwren, SPI_PWREN_ENABLE, SPI_PWREN_ENABLE_WIDTH,
+		            DISABLE);
+		p_spi_x->PWREN = pwren;
 
 		status = SPI_OK;
 	}
@@ -156,8 +158,8 @@ spi_status_t spi_init(spi_handle_t* p_spi_handle)
 	if (clk_status != SPI_OK)
 		return clk_status;
 
-	if (IS_BIT_SET(port->CTL1, SPI_CTL1_ENABLE_MASK)) {
-		CLEAR_BIT(port->CTL1, SPI_CTL1_ENABLE_MASK);
+	if (IS_BIT_SET(port->CTL1, SPI_CTL1_ENABLE)) {
+		CLEAR_BIT(port->CTL1, SPI_CTL1_ENABLE);
 	}
 
 	spi_set_device_mode(p_spi_handle->p_SPIx, device_mode);
@@ -170,7 +172,7 @@ spi_status_t spi_init(spi_handle_t* p_spi_handle)
 	spi_set_cs_selector(p_spi_handle->p_SPIx, cs_selector);
 	spi_set_msb(p_spi_handle->p_SPIx, msb);
 
-	SET_BIT(port->CTL1, SPI_CTL1_ENABLE_MASK);
+	SET_BIT(port->CTL1, SPI_CTL1_ENABLE);
 
 	return SPI_OK;
 }
@@ -178,61 +180,64 @@ spi_status_t spi_init(spi_handle_t* p_spi_handle)
 static inline void spi_set_device_mode(spi_type* port, uint8_t device_mode)
 {
 	uint32_t cp_bit = (device_mode == SPI_DEVICE_MODE_CONTROLLER) ? 1U : 0U;
-	WRITE_FIELD(port->CTL1, SPI_CTL1_CP_OFS, 1U, cp_bit);
+	WRITE_FIELD(port->CTL1, SPI_CTL1_CP, SPI_CTL1_CP_WIDTH, cp_bit);
 }
 
 static inline void spi_set_clock_source(spi_type* port, uint8_t clock_source)
 {
-	uint32_t sel_mask;
+	uint32_t clksel = 0U;
 	switch (clock_source) {
 		case SPI_CLOCK_SRC_MFCLK:
-			sel_mask = SPI_CLKSEL_MFCLK_SEL_MASK;
+			SET_BIT(clksel, SPI_CLKSEL_MFCLK_SEL);
 			break;
 		case SPI_CLOCK_SRC_LFCLK:
-			sel_mask = SPI_CLKSEL_LFCLK_SEL_MASK;
+			SET_BIT(clksel, SPI_CLKSEL_LFCLK_SEL);
 			break;
 		case SPI_CLOCK_SRC_BUSCLK:
 		default:
-			sel_mask = SPI_CLKSEL_SYSCLK_SEL_MASK;
+			SET_BIT(clksel, SPI_CLKSEL_SYSCLK_SEL);
 			break;
 	}
-	port->CLKSEL = sel_mask;
+	port->CLKSEL = clksel;
 }
 
 static inline void spi_set_clock_divide_ratio(spi_type* port, uint8_t ratio)
 {
-	port->CLKDIV = (uint32_t)ratio & SPI_CLKDIV_RATIO_MASK;
+	WRITE_FIELD(port->CLKDIV, SPI_CLKDIV_RATIO, SPI_CLKDIV_RATIO_WIDTH,
+	            ratio);
 }
 
 static inline void spi_set_clock_prescaler(spi_type* port, uint16_t scr)
 {
-	port->CLKCTL = (port->CLKCTL & ~SPI_CLKCTL_SCR_MASK) |
-	               ((uint32_t)scr & SPI_CLKCTL_SCR_MASK);
+	WRITE_FIELD(port->CLKCTL, SPI_CLKCTL_SCR, SPI_CLKCTL_SCR_WIDTH, scr);
 }
 
 static inline void spi_set_data_width(spi_type* port, uint8_t data_width)
 {
-	WRITE_FIELD(port->CTL0, SPI_CTL0_DSS_OFS, 5U, data_width);
+	WRITE_FIELD(port->CTL0, SPI_CTL0_DSS, SPI_CTL0_DSS_WIDTH, data_width);
 }
 
 static inline void spi_set_cpol(spi_type* port, uint8_t cpol)
 {
-	WRITE_FIELD(port->CTL0, SPI_CTL0_SPO_OFS, 1U, cpol);
+	WRITE_FIELD(port->CTL0, SPI_CTL0_SPO, SPI_CTL0_SPO_WIDTH, cpol);
 }
 static inline void spi_set_cpha(spi_type* port, uint8_t cpha)
 {
-	WRITE_FIELD(port->CTL0, SPI_CTL0_SPH_OFS, 1U, cpha);
+	WRITE_FIELD(port->CTL0, SPI_CTL0_SPH, SPI_CTL0_SPH_WIDTH, cpha);
 }
 static inline void spi_set_cs_selector(spi_type* port, uint8_t cs_selector)
 {
-	WRITE_FIELD(port->CTL0, SPI_CTL0_CSSEL_OFS, SPI_CTL0_CSSEL_WIDTH,
+	WRITE_FIELD(port->CTL0, SPI_CTL0_CSSEL, SPI_CTL0_CSSEL_WIDTH,
 	            cs_selector);
 }
 
 static inline void spi_set_msb(spi_type* port, uint8_t msb)
 {
-	WRITE_FIELD(port->CTL1, SPI_CTL1_MSB_OFS, 1U, msb);
+	WRITE_FIELD(port->CTL1, SPI_CTL1_MSB, SPI_CTL1_MSB_WIDTH, msb);
 }
+
+static spi_status_t spi_wait_idle(const spi_type* p_spi_x, uint32_t timeout);
+static spi_status_t spi_reset(spi_type* p_spi_x);
 
 /********************************************************************************
  * @fn				- spi_de_init
@@ -256,32 +261,53 @@ spi_status_t spi_de_init(spi_type* p_spi_x)
 	VALIDATE_PTR(p_spi_x, SPI_ERROR_NULL_PTR);
 	VALIDATE_SPI_PORT(p_spi_x);
 
-	volatile uint32_t* ctl1 = &p_spi_x->CTL1;
+	spi_status_t st = spi_wait_idle(p_spi_x, SPI_SOFTWARE_TIMEOUT);
+	if (st != SPI_OK) {
+		return st;
+	}
 
-	// Wait for any possible transfer operations on the peripheral to end
-	uint32_t timeout = SPI_SOFTWARE_TIMEOUT;
-	while (IS_BIT_SET(p_spi_x->STAT1, SPI_STAT_BUSY_OFS)) {
-		if (timeout == 0U) {
-			return SPI_BUSY;
+	CLEAR_BIT(p_spi_x->CTL1, SPI_CTL1_ENABLE);
+
+	st = spi_reset(p_spi_x);
+	if (st != SPI_OK) {
+		return st;
+	}
+
+	uint32_t pwren = 0;
+	WRITE_FIELD(pwren, SPI_PWREN_KEY, SPI_PWREN_KEY_WIDTH,
+	            SPI_PWREN_KEY_VAL_UNLOCK);
+	WRITE_FIELD(pwren, SPI_PWREN_ENABLE, SPI_PWREN_ENABLE_WIDTH, DISABLE);
+	p_spi_x->PWREN = pwren;
+	return SPI_OK;
+}
+
+static spi_status_t spi_wait_idle(const spi_type* p_spi_x, uint32_t timeout)
+{
+	while (READ_FIELD(p_spi_x->STAT1, SPI_STAT1_BUSY,
+	                  SPI_STAT1_BUSY_WIDTH) != 0U) {
+		if (timeout == 0) {
+			return SPI_ERROR_TIMEOUT;
 		}
 		timeout--;
 	}
+	return SPI_OK;
+}
 
-	// Disable the functional SPI block
-	CLEAR_BIT(*ctl1, SPI_CTL1_ENABLE_OFS);
+static spi_status_t spi_reset(spi_type* p_spi_x)
+{
+	uint32_t rstctl = 0;
+	WRITE_FIELD(rstctl, SPI_RSTCTL_KEY, SPI_RSTCTL_KEY_WIDTH,
+	            SPI_RSTCTL_KEY_UNLOCK);
+	WRITE_FIELD(rstctl, SPI_RSTCTL_RESETSTKYCLR,
+	            SPI_RSTCTL_RESETSTKYCLR_WIDTH, ENABLE);
+	WRITE_FIELD(rstctl, SPI_RSTCTL_RESETASSERT,
+	            SPI_RSTCTL_RESETASSERT_WIDTH, ENABLE);
+	p_spi_x->RSTCTL = rstctl;
 
-	// Assert peripheral reset
-	p_spi_x->RSTCTL = SPI_RSTCTL_KEY_UNLOCK_W |
-	                  SPI_RSTCTL_RESETSTKYCLR_CLR |
-	                  SPI_RSTCTL_RESETASSERT_ASSERT;
-
-	// Confirm the rest took place
-	if ((p_spi_x->STAT0 & SPI_GPRCM_STAT_RESETSTKY_MASK) == 0U) {
+	if (READ_FIELD(p_spi_x->STAT0, SPI_STAT0_RESETSTKY,
+	               SPI_STAT0_RESETSTKY_WIDTH) == 0) {
 		return SPI_ERROR_INVALID_STATE;
 	}
-
-	// Disable peripheral power last
-	p_spi_x->PWREN = SPI_PWREN_KEY_UNLOCK_W | SPI_PWREN_ENABLE_DISABLE;
 
 	return SPI_OK;
 }
@@ -294,7 +320,7 @@ spi_status_t spi_de_init(spi_type* p_spi_x)
 
 static spi_status_t spi_wait_tx_ready(spi_type* p_spi_x, uint32_t timeout);
 static spi_status_t spi_wait_rx_ready(spi_type* p_spi_x, uint32_t timeout);
-static spi_status_t spi_wait_idle(spi_type* p_spi_x, uint32_t timeout);
+// static spi_status_t spi_wait_idle(spi_type* p_spi_x, uint32_t timeout);
 static spi_status_t spi_transceive_pl(spi_handle_t* p_spi_handle,
                                       const uint8_t* p_tx_buffer,
                                       uint8_t* p_rx_buffer,
@@ -323,14 +349,14 @@ spi_status_t spi_write_data_pl(spi_handle_t* p_spi_handle,
 {
 	//     Validate TX buffer and frame count.
 	VALIDATE_PTR(p_spi_handle, SPI_ERROR_NULL_PTR);
-	VALIDATE_PTR(p_spi_handle->p_SPIx, SPI_ERROR_INVALID_PORT);
+	VALIDATE_SPI_PORT(p_spi_handle->p_SPIx);
 	VALIDATE_PTR(p_tx_buffer, SPI_ERROR_NULL_PTR);
 	if (frame_count == 0) {
 		return SPI_ERROR_INVALID_FRAME_COUNT;
 	}
 
 	//     Confirm the configured frame width matches the buffer type.
-	uint32_t dss = READ_FIELD(p_spi_handle->p_SPIx->CTL0, SPI_CTL0_DSS_OFS,
+	uint32_t dss = READ_FIELD(p_spi_handle->p_SPIx->CTL0, SPI_CTL0_DSS,
 	                          SPI_CTL0_DSS_WIDTH);
 	if (dss > (uint32_t)SPI_DATA_WIDTH_8) {
 		return SPI_ERROR_INVALID_DATA_WIDTH;
@@ -347,39 +373,39 @@ spi_status_t spi_write_data_pl(spi_handle_t* p_spi_handle,
 	return status;
 }
 
-static spi_status_t spi_wait_tx_ready(spi_type* p_spi_x, uint32_t timeout)
+static spi_status_t spi_wait_stat1_flag(spi_type* p_spi_x, uint32_t pos,
+                                        uint32_t width, uint32_t expected,
+                                        uint32_t timeout)
 {
-	uint32_t elapsed = 0;
-	while ((p_spi_x->STAT0 & SPI_STAT_TNF_MASK) == 0) // TX FIFO full
-	{
-		if (++elapsed >= timeout) {
+	while (READ_FIELD(p_spi_x->STAT1, pos, width) != expected) {
+		if (timeout == 0) {
 			return SPI_ERROR_TIMEOUT;
 		}
+		timeout--;
 	}
 	return SPI_OK;
 }
 
+static spi_status_t spi_wait_tx_ready(spi_type* p_spi_x, uint32_t timeout)
+{
+	return spi_wait_stat1_flag(p_spi_x, SPI_STAT1_TNF, SPI_STAT1_TNF_WIDTH,
+	                           1, timeout);
+}
+
 static spi_status_t spi_wait_rx_ready(spi_type* p_spi_x, uint32_t timeout)
 {
-	uint32_t elapsed = 0;
-	while ((p_spi_x->STAT0 & SPI_STAT_RFE_MASK) != 0U) /* RX FIFO empty */
-	{
-		if (++elapsed >= timeout) {
-			return SPI_ERROR_TIMEOUT;
-		}
-	}
-	return SPI_OK;
+	return spi_wait_stat1_flag(p_spi_x, SPI_STAT1_RFE, SPI_STAT1_RFE_WIDTH,
+	                           0, timeout);
 }
-static spi_status_t spi_wait_idle(spi_type* p_spi_x, uint32_t timeout)
+
+static spi_status_t spi_wait_tx_complete(spi_type* p_spi_x, uint32_t timeout)
 {
-	uint32_t elapsed = 0U;
-	while (((p_spi_x->STAT0 & SPI_STAT_TFE_MASK) == 0) ||
-	       ((p_spi_x->STAT0 & SPI_STAT_BUSY_MASK) != 0)) {
-		if (++elapsed >= timeout) {
-			return SPI_ERROR_TIMEOUT;
-		}
+	spi_status_t st = spi_wait_stat1_flag(p_spi_x, SPI_STAT1_TFE,
+	                                      SPI_STAT1_TFE_WIDTH, 1, timeout);
+	if (st != SPI_OK) {
+		return st;
 	}
-	return SPI_OK;
+	return spi_wait_idle(p_spi_x, timeout);
 }
 
 static spi_status_t spi_transceive_pl(spi_handle_t* p_spi_handle,
@@ -396,8 +422,9 @@ static spi_status_t spi_transceive_pl(spi_handle_t* p_spi_handle,
 			return status;
 		}
 
-		p_spi_x->TXDATA =
-		    (p_tx_buffer != NULL) ? (uint32_t)p_tx_buffer[i] : 0xFF;
+		p_spi_x->TXDATA = (p_tx_buffer != NULL)
+		                      ? (uint32_t)p_tx_buffer[i]
+		                      : SPI_DUMMY_BYTE;
 
 		status = spi_wait_rx_ready(p_spi_x, timeout);
 		if (status != SPI_OK) {
@@ -410,7 +437,7 @@ static spi_status_t spi_transceive_pl(spi_handle_t* p_spi_handle,
 		}
 	}
 
-	return spi_wait_idle(p_spi_x, timeout);
+	return spi_wait_tx_complete(p_spi_x, timeout);
 }
 
 /********************************************************************************
@@ -433,58 +460,54 @@ static spi_status_t spi_transceive_pl(spi_handle_t* p_spi_handle,
 spi_status_t spi_read_data_pl(spi_handle_t* p_spi_handle, uint8_t* p_rx_buffer,
                               uint32_t frame_count, uint32_t timeout)
 {
-	// TODO: Check if function is correctly written
-
 	//     Validate RX buffer and frame count.
 	VALIDATE_PTR(p_spi_handle, SPI_ERROR_NULL_PTR);
-	VALIDATE_PTR(p_spi_handle->p_SPIx, SPI_ERROR_INVALID_PORT);
+	VALIDATE_SPI_PORT(p_spi_handle->p_SPIx);
 	VALIDATE_PTR(p_rx_buffer, SPI_ERROR_NULL_PTR);
 	if (frame_count == 0) {
 		return SPI_ERROR_INVALID_FRAME_COUNT;
 	}
-	//     Confirm that the peripheral is initialized and enabled.
-	if ((p_spi_handle->p_SPIx->CTL1 & SPI_CTL1_ENABLE_MASK) == 0) {
-		return SPI_ERROR_NOT_ENABLED;
-	}
+	VALIDATE_SPI_ENABLED(p_spi_handle->p_SPIx);
 
+	spi_type* p_spi_x = p_spi_handle->p_SPIx;
+
+	uint32_t dss =
+	    READ_FIELD(p_spi_x->CTL0, SPI_CTL0_DSS, SPI_CTL0_DSS_WIDTH);
+	if (dss > SPI_CTL0_DSS_VAL_BITS8) {
+		return SPI_ERROR_INVALID_DATA_WIDTH;
+	}
 	if (p_spi_handle->spi_config.SPI_Device_Mode ==
 	    SPI_DEVICE_MODE_CONTROLLER) {
-		//     For every requested frame, transmit one dummy frame.
-		spi_status_t status = spi_transceive_pl(
-		    p_spi_handle, NULL, p_rx_buffer, frame_count, timeout);
-
-		return status;
+		return spi_transceive_pl(p_spi_handle, NULL, p_rx_buffer,
+		                         frame_count, timeout);
 	}
-	else if (p_spi_handle->spi_config.SPI_Device_Mode ==
-	         SPI_DEVICE_MODE_PERIPHERAL) {
-
-		//     If the peripheral must respond during reception, preload
-		//     TX data before the external controller starts clocking.
-		p_spi_handle->p_SPIx->TXDATA = 0xFF;
-
-		//     Poll STAT.RFE.
-		uint32_t elapsed = 0;
-		for (uint32_t frame = 0; frame < frame_count; frame++) {
-			while ((p_spi_handle->p_SPIx->STAT0 &
-			        SPI_STAT_RFE_MASK) != 0) {
-				if (++elapsed >= timeout) {
-					return SPI_ERROR_TIMEOUT;
-				}
-			}
-			p_rx_buffer[frame] =
-			    (uint8_t)p_spi_handle->p_SPIx->RXDATA;
-		}
-
-		//     Check RX overflow and TX underflow events where
-		//     applicable.
-		// if ((p_spi_handle->p_SPIx->RIS0 & SPI_RIS))
-		// DO NOT HAVE SPI_RIS MASKS
-
-		return SPI_OK;
-	}
-	else {
+	if (p_spi_handle->spi_config.SPI_Device_Mode !=
+	    SPI_DEVICE_MODE_PERIPHERAL) {
 		return SPI_ERROR_INVALID_MODE;
 	}
+
+	spi_status_t st = spi_wait_tx_ready(p_spi_x, timeout);
+	if (st != SPI_OK) {
+		return st;
+	}
+	p_spi_x->TXDATA = (uint32_t)SPI_DUMMY_BYTE;
+
+	for (uint32_t i = 0; i < frame_count; i++) {
+		st = spi_wait_rx_ready(p_spi_x, timeout);
+		if (st != SPI_OK) {
+			return st;
+		}
+		p_rx_buffer[i] = (uint8_t)p_spi_x->RXDATA;
+		if ((i + 1) < frame_count) {
+			st = spi_wait_tx_ready(p_spi_x, timeout);
+			if (st != SPI_OK) {
+				return st;
+			}
+			p_spi_x->TXDATA = (uint32_t)SPI_DUMMY_BYTE;
+		}
+	}
+
+	return SPI_OK;
 }
 
 // NOTE: @PERIPHERAL_CONTROL_API
@@ -505,42 +528,51 @@ spi_status_t spi_read_data_pl(spi_handle_t* p_spi_handle, uint8_t* p_rx_buffer,
 
 spi_status_t spi_peri_control(spi_type* p_spi_x, uint8_t EN_or_DI)
 {
-	// TODO: Finish work on the function
+	VALIDATE_PTR(p_spi_x, SPI_ERROR_NULL_PTR);
+	VALIDATE_SPI_PORT(p_spi_x);
+
+	if (READ_FIELD(p_spi_x->PWREN, SPI_PWREN_ENABLE,
+	               SPI_PWREN_ENABLE_WIDTH) == DISABLE) {
+		return SPI_ERROR_NOT_ENABLED;
+	}
 
 	if (EN_or_DI == ENABLE) {
-		//     Validate the pointer and SPI instance.
+		uint32_t clksel =
+		    READ_FIELD(p_spi_x->CLKSEL, SPI_CLKSEL_LFCLK_SEL,
+		               SPI_CLKSEL_LFCLK_SEL_WIDTH) |
+		    READ_FIELD(p_spi_x->CLKSEL, SPI_CLKSEL_MFCLK_SEL,
+		               SPI_CLKSEL_MFCLK_SEL_WIDTH) |
+		    READ_FIELD(p_spi_x->CLKSEL, SPI_CLKSEL_SYSCLK_SEL,
+		               SPI_CLKSEL_SYSCLK_SEL_WIDTH);
 
-		//     Verify peripheral power is enabled.
+		if (clksel == 0) {
+			return SPI_ERROR_INVALID_STATE;
+		}
 
-		//     Verify configuration has been completed.
+		if (READ_FIELD(p_spi_x->CTL1, SPI_CTL1_ENABLE,
+		               SPI_CTL1_ENABLE_WIDTH) != DISABLE) {
+			return SPI_ERROR_INVALID_STATE;
+		}
 
-		//     Verify that the SPI is currently disabled.
+		WRITE_FIELD(p_spi_x->CTL1, SPI_CTL1_ENABLE,
+		            SPI_CTL1_ENABLE_WIDTH, ENABLE);
 
-		//     Set CTL1.ENABLE.
+		if (READ_FIELD(p_spi_x->CTL1, SPI_CTL1_ENABLE,
+		               SPI_CTL1_ENABLE_WIDTH) != ENABLE) {
+			return SPI_ERROR_INVALID_STATE;
+		}
 
-		//     Optionally read back CTL1.ENABLE.
-
-		// Return
+		return SPI_OK;
 	}
-	else {
-		//     Validate pointer and instance.
 
-		//     Inspect STAT.BUSY.
-
-		//     If active, wait with a timeout or return SPI_BUSY.
-
-		//     Once idle, clear CTL1.ENABLE.
-
-		// Return
+	if (EN_or_DI == DISABLE) {
+		if (spi_wait_idle(p_spi_x, SPI_SOFTWARE_TIMEOUT) != SPI_OK) {
+			return SPI_BUSY;
+		}
+		WRITE_FIELD(p_spi_x->CTL1, SPI_CTL1_ENABLE,
+		            SPI_CTL1_ENABLE_WIDTH, DISABLE);
+		return SPI_OK;
 	}
 
-	/*
-	 *Find it in:
-	 TRM 26.2.1, Clock Control.
-	 TRM 26.2.5, Initialization.
-	 TRM 26.3.29, CTL1.ENABLE and CTL1.CP.
-	 TRM 26.3.32, STAT.BUSY.
-	 */
-
-	return SPI_OK;
+	return SPI_ERROR_INVALID_STATE;
 }

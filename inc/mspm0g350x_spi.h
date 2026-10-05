@@ -6,6 +6,7 @@
 
 // Polling / blocking value used in loops in functions used by the driver
 #define SPI_SOFTWARE_TIMEOUT	1000000
+#define SPI_DUMMY_BYTE		0xFF
 
 // NOTE: --- Structures for SPI ---
 
@@ -168,6 +169,14 @@ typedef enum {
 
 #define SPI_CLKSEL_SYSCLK_SEL		3U
 #define SPI_CLKSEL_SYSCLK_SEL_WIDTH	1U
+
+// NOTE: --- SPI_CLKCTL bitfields ---
+
+#define SPI_CLKCTL_SCR			0U
+#define SPI_CLKCTL_SCR_WIDTH		10U
+
+#define SPI_CLKCTL_DSAMPLE		28U
+#define SPI_CLKCTL_DSAMPLE_WIDTH	4U
 
 // NOTE: --- SPI_RSTCTL bitfields ---
 
