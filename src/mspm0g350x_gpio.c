@@ -5,6 +5,8 @@
 
 /********************************************************************************
  *
+ * TODO: Implement Systick where it is necessary ( GPIO )
+ *
  *******************************************************************************/
 
 /********************************************************************************
@@ -47,14 +49,20 @@ gpio_status_t gpio_configure_pin(const gpio_config_t* gpio_cfg)
 	if (!gpio_dio_is_valid(gpio_cfg->p_GPIOx, gpio_cfg->dio_bit))
 		return GPIO_ERROR_INVALID_PIN;
 
+	const uint32_t mask = 1UL << gpio_cfg->dio_bit;
+
 	switch (gpio_cfg->direction) {
 		case GPIO_DIR_OUTPUT:
-			gpio_cfg->p_GPIOx->DOESET31_0 =
-			    (1UL << gpio_cfg->dio_bit);
+			if (gpio_cfg->level != 0) {
+				gpio_cfg->p_GPIOx->DOUTSET31_0 = mask;
+			}
+			else {
+				gpio_cfg->p_GPIOx->DOUTCLR31_0 = mask;
+			}
+			gpio_cfg->p_GPIOx->DOESET31_0 = mask;
 			break;
 		case GPIO_DIR_INPUT:
-			gpio_cfg->p_GPIOx->DOECLR31_0 =
-			    (1UL << gpio_cfg->dio_bit);
+			gpio_cfg->p_GPIOx->DOECLR31_0 = mask;
 			break;
 		default:
 			return GPIO_ERROR_INVALID_MODE;

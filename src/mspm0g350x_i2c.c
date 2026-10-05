@@ -17,6 +17,8 @@
  * TODO:
  * Research how open drain works ( in particular i2c application )
  *
+ * TODO: Implement Systick where it is necessary ( I2C )
+ *
  *******************************************************************************/
 
 /********************************************************************************

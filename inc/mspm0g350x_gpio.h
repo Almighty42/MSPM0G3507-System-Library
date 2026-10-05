@@ -38,7 +38,8 @@ typedef enum {
 	GPIO_ERROR_INVALID_MODE,				// Mode value out of range
 	GPIO_ERROR_INVALID_IRQ,					// Invalid IRQ number
 	GPIO_ERROR_LOCK_FAILED,					// Failed to lock GPIO configuration
-	GPIO_ERROR_INVALID_LEVEL				// Can only be HIGH or LOW
+	GPIO_ERROR_INVALID_LEVEL,				// Can only be HIGH or LOW
+	GPIO_ERROR_INVALID_DIRECTION				// Input or output
 } gpio_status_t;
 
 

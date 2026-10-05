@@ -11,6 +11,7 @@
  * - spi_write_data_pl
  * - spi_read_data_pl
  * - spi_peri_control
+ * TODO: Implement Systick where it is necessary ( SPI )
  *
  *******************************************************************************/
 
@@ -115,9 +116,6 @@ spi_status_t spi_init(spi_handle_t* p_spi_handle)
 	spi_type* port = p_spi_handle->p_SPIx;
 	VALIDATE_SPI_PORT(port);
 
-	// Reset if already configured
-	spi_de_init(port);
-
 	// Device mode
 	uint8_t device_mode = p_spi_handle->spi_config.SPI_Device_Mode;
 	VALIDATE_SPI_DEVICE_MODE(device_mode);
@@ -171,15 +169,6 @@ spi_status_t spi_init(spi_handle_t* p_spi_handle)
 	spi_set_cpha(p_spi_handle->p_SPIx, cpha);
 	spi_set_cs_selector(p_spi_handle->p_SPIx, cs_selector);
 	spi_set_msb(p_spi_handle->p_SPIx, msb);
-
-	uint32_t drain_i = 0U;
-	while (!IS_BIT_SET(port->STAT1, SPI_STAT_RFE_MASK)) {
-		if (drain_i >= SPI_SOFTWARE_TIMEOUT) {
-			return SPI_ERROR_TIMEOUT;
-		}
-		(void)port->RXDATA;
-		drain_i++;
-	}
 
 	SET_BIT(port->CTL1, SPI_CTL1_ENABLE_MASK);
 
@@ -332,9 +321,6 @@ spi_status_t spi_write_data_pl(spi_handle_t* p_spi_handle,
                                const uint8_t* p_tx_buffer, uint32_t frame_count,
                                uint32_t timeout)
 {
-	// TODO: Do a basic reading / understanding of SPI protocol, how it
-	// works and why the steps below are neccesary
-
 	//     Validate TX buffer and frame count.
 	VALIDATE_PTR(p_spi_handle, SPI_ERROR_NULL_PTR);
 	VALIDATE_PTR(p_spi_handle->p_SPIx, SPI_ERROR_INVALID_PORT);
@@ -355,10 +341,10 @@ spi_status_t spi_write_data_pl(spi_handle_t* p_spi_handle,
 	//     Discard every simultaneously received frame.
 	//     Wait until TX is empty and SPI is no longer busy.
 	//     Return the transfer status.
-	spi_transceive_pl(p_spi_handle, p_tx_buffer, NULL, frame_count,
-	                  timeout);
+	spi_status_t status = spi_transceive_pl(p_spi_handle, p_tx_buffer, NULL,
+	                                        frame_count, timeout);
 
-	return SPI_OK;
+	return status;
 }
 
 static spi_status_t spi_wait_tx_ready(spi_type* p_spi_x, uint32_t timeout)
@@ -461,7 +447,7 @@ spi_status_t spi_read_data_pl(spi_handle_t* p_spi_handle, uint8_t* p_rx_buffer,
 		return SPI_ERROR_NOT_ENABLED;
 	}
 
-	if (p_spi_handle->spi_config.SPI_Data_Width ==
+	if (p_spi_handle->spi_config.SPI_Device_Mode ==
 	    SPI_DEVICE_MODE_CONTROLLER) {
 		//     For every requested frame, transmit one dummy frame.
 		spi_status_t status = spi_transceive_pl(
@@ -469,7 +455,7 @@ spi_status_t spi_read_data_pl(spi_handle_t* p_spi_handle, uint8_t* p_rx_buffer,
 
 		return status;
 	}
-	else if (p_spi_handle->spi_config.SPI_Data_Width ==
+	else if (p_spi_handle->spi_config.SPI_Device_Mode ==
 	         SPI_DEVICE_MODE_PERIPHERAL) {
 
 		//     If the peripheral must respond during reception, preload

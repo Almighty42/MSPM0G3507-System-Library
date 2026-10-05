@@ -143,6 +143,8 @@ typedef enum
 
 // USAGE -- @IOMUX_PF ---
 
+#define IOMUX_PF_NONE                                      0U
+
 #define IOMUX_PIN_PA0_PF_GPIO                              0x01
 #define IOMUX_PIN_PA0_PF_UART0_TX                          0x02
 #define IOMUX_PIN_PA0_PF_I2C0_SDA                          0x03
@@ -581,7 +583,7 @@ typedef enum
 
 #define IOMUX_PIN_PB27_PF_GPIO                              0x01
 #define IOMUX_PIN_PB27_PF_COMP2_OUT                         0x02
-#define IOMUX_PIN_PB27_PF_SPI1_CS2                          0x03
+#define IOMUX_PIN_PB27_PF_SPI1_CS1                          0x03
 #define IOMUX_PIN_PB27_PF_TIMA0_C3N                         0x04
 #define IOMUX_PIN_PB27_PF_TIMG6_C1                          0x05
 #define IOMUX_PIN_PB27_PF_TIMA1_C1                          0x06
@@ -603,5 +605,6 @@ typedef enum
     } while (0)
 
 iomux_status_t iomux_configure_pin(const iomux_config_t *cfg);
+iomux_status_t iomux_disconnect_pin(iomux_pincm_index_t pin);
 
 #endif

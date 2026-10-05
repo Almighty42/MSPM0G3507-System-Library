@@ -7,18 +7,6 @@
 // Polling / blocking value used in loops in functions used by the driver
 #define SPI_SOFTWARE_TIMEOUT	1000000
 
-// #define SPI_CTL1_ENABLE_OFS         (0U)
-// #define SPI_CTL1_ENABLE_MASK        ((uint32_t)0x00000001U)  
-//
-// #define SPI_CTL1_ENABLE_DISABLE     ((uint32_t)0x00000000U)
-// #define SPI_CTL1_ENABLE_ENABLE      ((uint32_t)0x00000001U)
-//
-// #define SPI_STAT_RFE_OFS            (2U)
-// #define SPI_STAT_RFE_MASK           ((uint32_t)0x00000004U)   
-//
-// #define SPI_STAT_RFE_NOT_EMPTY      ((uint32_t)0x00000000U)
-// #define SPI_STAT_RFE_EMPTY          ((uint32_t)0x00000004U)
-
 // NOTE: --- Structures for SPI ---
 
 typedef struct
@@ -69,8 +57,8 @@ typedef enum {
 
 // USAGE: --- @SPI_DEVICE_MODE ---
 
-#define SPI_DEVICE_MODE_PERIPHERAL		1
-#define SPI_DEVICE_MODE_CONTROLLER		0
+#define SPI_DEVICE_MODE_PERIPHERAL		0
+#define SPI_DEVICE_MODE_CONTROLLER		1
 
 // USAGE: --- @SPI_CLOCK_SOURCE ---
 
@@ -147,158 +135,156 @@ typedef enum {
 #define VALIDATE_SPI_MSB(msb)			VALIDATE_ENUM((msb), SPI_MSB_LSB, SPI_ERROR_INVALID_MSB)
 #define VALIDATE_SPI_ENABLED(port) 		VALIDATE_BIT_SET((port)->CTL1, SPI_CTL1_ENABLE, SPI_ERROR_NOT_ENABLED)
 
-// NOTE: --- SPI_PWREN bitfields and other ---
+// NOTE: --- SPI_PWREN bitfields ---
 
-#define SPI_PWREN_KEY_OFS         (24)
-#define SPI_PWREN_KEY_MASK        ((uint32_t)0xFF000000U)
-#define SPI_PWREN_KEY_UNLOCK_W    ((uint32_t)0x26000000U)
-#define SPI_PWREN_ENABLE_OFS      (0)
-#define SPI_PWREN_ENABLE_MASK     ((uint32_t)0x00000001U)
-#define SPI_PWREN_ENABLE_DISABLE  ((uint32_t)0x00000000U)
-#define SPI_PWREN_ENABLE_ENABLE   ((uint32_t)0x00000001U)
+#define SPI_PWREN_ENABLE		0U
+#define SPI_PWREN_ENABLE_WIDTH		1U
 
-// NOTE: --- SPI_CLKDIV bitfields and other ---
+#define SPI_PWREN_KEY			24U
+#define SPI_PWREN_KEY_WIDTH		8U
+#define SPI_PWREN_KEY_VAL_UNLOCK	((uint32_t)0x0000001AU)
+#define SPI_PWREN_KEY_VAL_LOCK		((uint32_t)0x00000000U)
 
-#define SPI_CLKDIV_RATIO_OFS      (0U)
-#define SPI_CLKDIV_RATIO_MASK     ((uint32_t)0x00000007U)
-#define SPI_CLKCTL_SCR_OFS    (0U)
-#define SPI_CLKCTL_SCR_MASK   (0x000003FFU)
+// NOTE: --- SPI_CLKDIV bitfields ---
 
-// NOTE: --- SPI_CLKSEL bitfields and other ---
+#define SPI_CLKDIV_RATIO		0U
+#define SPI_CLKDIV_RATIO_WIDTH		3U
+#define SPI_CLKDIV_RATIO_VAL_DIVNONE	((uint32_t)0x00000000U)
+#define SPI_CLKDIV_RATIO_VAL_DIV2	((uint32_t)0x00000001U)
+#define SPI_CLKDIV_RATIO_VAL_DIV3	((uint32_t)0x00000002U)
+#define SPI_CLKDIV_RATIO_VAL_DIV4	((uint32_t)0x00000003U)
+#define SPI_CLKDIV_RATIO_VAL_DIV5	((uint32_t)0x00000004U)
+#define SPI_CLKDIV_RATIO_VAL_DIV6	((uint32_t)0x00000005U)
+#define SPI_CLKDIV_RATIO_VAL_DIV7	((uint32_t)0x00000006U)
+#define SPI_CLKDIV_RATIO_VAL_DIV8	((uint32_t)0x00000007U)
 
-#define SPI_CLKSEL_LFCLK_SEL_OFS   (1U)
-#define SPI_CLKSEL_LFCLK_SEL_MASK  ((uint32_t)0x00000002U)
-#define SPI_CLKSEL_MFCLK_SEL_OFS   (2U)
-#define SPI_CLKSEL_MFCLK_SEL_MASK  ((uint32_t)0x00000004U)
-#define SPI_CLKSEL_SYSCLK_SEL_OFS  (3U)
-#define SPI_CLKSEL_SYSCLK_SEL_MASK ((uint32_t)0x00000008U)
+// NOTE: --- SPI_CLKSEL bitfields ---
 
-// NOTE: --- SPI_RSTCTL bitfields and other ---
+#define SPI_CLKSEL_LFCLK_SEL		1U
+#define SPI_CLKSEL_LFCLK_SEL_WIDTH	1U
 
-#define SPI_RSTCTL_KEY_UNLOCK_W          ((uint32_t)0xB1000000U)
-#define SPI_RSTCTL_RESETASSERT_ASSERT    ((uint32_t)0x00000001U)
-#define SPI_GPRCM_STAT_RESETSTKY_MASK    ((uint32_t)0x00000001U)
-#define SPI_RSTCTL_RESETSTKYCLR_CLR      ((uint32_t)0x00000002U)
+#define SPI_CLKSEL_MFCLK_SEL		2U
+#define SPI_CLKSEL_MFCLK_SEL_WIDTH	1U
 
-// NOTE: --- Bit position definitions SPI_STAT ---
+#define SPI_CLKSEL_SYSCLK_SEL		3U
+#define SPI_CLKSEL_SYSCLK_SEL_WIDTH	1U
 
-#define SPI_SR_TFE_STATE   			0
-#define SPI_SR_TNF_STATE   			1
-#define SPI_SR_RFE_STATE   			2
-#define SPI_SR_RNF_STATE   			3
-#define SPI_SR_BUSY_STATE   			4
+// NOTE: --- SPI_RSTCTL bitfields ---
 
-// NOTE: --- SPI_STAT bitfields ---
+#define SPI_RSTCTL_RESETASSERT		0U
+#define SPI_RSTCTL_RESETASSERT_WIDTH	1U
 
-#define SPI_STAT_TFE_OFS         (0U)
-#define SPI_STAT_TFE_MASK        ((uint32_t)0x00000001U)   
+#define SPI_RSTCTL_RESETSTKYCLR		1U
+#define SPI_RSTCTL_RESETSTKYCLR_WIDTH	1U
 
-#define SPI_STAT_TNF_OFS         (1U)
-#define SPI_STAT_TNF_MASK        ((uint32_t)0x00000002U)  
+#define SPI_RSTCTL_KEY			24U
+#define SPI_RSTCTL_KEY_WIDTH		8U
+#define SPI_RSTCTL_KEY_UNLOCK		((uint32_t)0x000000B1U)
+#define SPI_RSTCTL_KEY_LOCK		((uint32_t)0x00000000U)
 
-#define SPI_STAT_RFE_OFS         (2U)
-#define SPI_STAT_RFE_MASK        ((uint32_t)0x00000004U) 
+// NOTE: --- SPI_STAT0 bitfields ---
 
-#define SPI_STAT_RNF_OFS         (3U)
-#define SPI_STAT_RNF_MASK        ((uint32_t)0x00000008U)
+#define SPI_STAT0_RESETSTKY		16U
+#define SPI_STAT0_RESETSTKY_WIDTH	1U
 
-#define SPI_STAT_BUSY_OFS        (4U)
-#define SPI_STAT_BUSY_MASK       ((uint32_t)0x00000010U)
+// NOTE: --- SPI_STAT1 bitfields ---
 
-// NOTE: --- Bit position definitions SPI_CTL0 ---
+#define SPI_STAT1_TFE			0U
+#define SPI_STAT1_TFE_WIDTH		1U
 
-#define SPI_CTL0_CSCLR				14
-#define SPI_CTL0_CSSEL				12
-#define SPI_CTL0_SPH				9
-#define SPI_CTL0_SPO				8
-#define SPI_CTL0_PACKEN				7
-#define SPI_CTL0_FRF				5
-#define SPI_CTL0_DSS				0
+#define SPI_STAT1_TNF			1U
+#define SPI_STAT1_TNF_WIDTH		1U
+
+#define SPI_STAT1_RFE			2U
+#define SPI_STAT1_RFE_WIDTH		1U
+
+#define SPI_STAT1_RNF			3U
+#define SPI_STAT1_RNF_WIDTH		1U
+
+#define SPI_STAT1_BUSY			4U
+#define SPI_STAT1_BUSY_WIDTH		1U
 
 // NOTE: --- SPI_CTL0 bitfields ---
 
-#define SPI_CTL0_DSS_OFS         (0U)
-#define SPI_CTL0_DSS_WIDTH       (5U)
-#define SPI_CTL0_DSS_MASK        ((uint32_t)0x0000001FU)
+#define SPI_CTL0_DSS			0U
+#define SPI_CTL0_DSS_WIDTH		5U
+#define SPI_CTL0_DSS_VAL_BITS4		((uint32_t)0x00000003U)
+#define SPI_CTL0_DSS_VAL_BITS5		((uint32_t)0x00000004U)
+#define SPI_CTL0_DSS_VAL_BITS6		((uint32_t)0x00000005U)
+#define SPI_CTL0_DSS_VAL_BITS7		((uint32_t)0x00000006U)
+#define SPI_CTL0_DSS_VAL_BITS8		((uint32_t)0x00000007U)
+#define SPI_CTL0_DSS_VAL_BITS9		((uint32_t)0x00000008U)
+#define SPI_CTL0_DSS_VAL_BITS10		((uint32_t)0x00000009U)
+#define SPI_CTL0_DSS_VAL_BITS11		((uint32_t)0x0000000AU)
+#define SPI_CTL0_DSS_VAL_BITS12		((uint32_t)0x0000000BU)
+#define SPI_CTL0_DSS_VAL_BITS13		((uint32_t)0x0000000CU)
+#define SPI_CTL0_DSS_VAL_BITS14		((uint32_t)0x0000000DU)
+#define SPI_CTL0_DSS_VAL_BITS15		((uint32_t)0x0000000EU)
+#define SPI_CTL0_DSS_VAL_BITS16		((uint32_t)0x0000000FU)
 
-#define SPI_CTL0_FRF_OFS         (5U)
-#define SPI_CTL0_FRF_WIDTH       (2U)                  
-#define SPI_CTL0_FRF_MASK        ((uint32_t)0x00000060U)
+#define SPI_CTL0_FRF			5U
+#define SPI_CTL0_FRF_WIDTH		2U
+#define SPI_CTL0_FRF_VAL_3WIRE		((uint32_t)0x00000000U)
+#define SPI_CTL0_FRF_VAL_4WIRE		((uint32_t)0x00000001U)
+#define SPI_CTL0_FRF_VAL_TISYNC		((uint32_t)0x00000002U)
+#define SPI_CTL0_FRF_VAL_MICROWIRE	((uint32_t)0x00000003U)
 
-#define SPI_CTL0_PACKEN_OFS      (7U)
-#define SPI_CTL0_PACKEN_WIDTH    (1U)                  
-#define SPI_CTL0_PACKEN_MASK     ((uint32_t)0x00000080U)
+#define SPI_CTL0_PACKEN			7U
+#define SPI_CTL0_PACKEN_WIDTH		1U
 
-#define SPI_CTL0_SPO_OFS         (8U)
-#define SPI_CTL0_SPO_MASK        ((uint32_t)0x00000100U)
+#define SPI_CTL0_SPO			8U
+#define SPI_CTL0_SPO_WIDTH		1U
 
-#define SPI_CTL0_SPH_OFS         (9U)
-#define SPI_CTL0_SPH_MASK        ((uint32_t)0x00000200U)   
+#define SPI_CTL0_SPH			9U
+#define SPI_CTL0_SPH_WIDTH		1U
 
-#define SPI_CTL0_CSSEL_OFS       (12U)
-#define SPI_CTL0_CSSEL_WIDTH     (2U)                     
-#define SPI_CTL0_CSSEL_MASK      ((uint32_t)0x00003000U) 
+#define SPI_CTL0_CSSEL			12U
+#define SPI_CTL0_CSSEL_WIDTH		2U
+#define SPI_CTL0_CSSEL_CS0		((uint32_t)0x00000000U)
+#define SPI_CTL0_CSSEL_CS1		((uint32_t)0x00000001U)
+#define SPI_CTL0_CSSEL_CS2		((uint32_t)0x00000002U)
+#define SPI_CTL0_CSSEL_CS3		((uint32_t)0x00000003U)
 
-#define SPI_CTL0_CSCLR_OFS       (14U)
-#define SPI_CTL0_CSCLR_WIDTH     (1U)                   
-#define SPI_CTL0_CSCLR_MASK      ((uint32_t)0x00004000U)
-
-
-
-// NOTE: --- Bit position definitions SPI_CTL1 ---
-
-#define SPI_CTL1_ENABLE				0
-#define SPI_CTL1_LBM				1
-#define SPI_CTL1_CP				2
-#define SPI_CTL1_POD				3
-#define SPI_CTL1_MSB				4
-#define SPI_CTL1_PREN				5
-#define SPI_CTL1_PES				6
-#define SPI_CTL1_PTEN				8
-#define SPI_CTL1_CDENABLE			11
-#define SPI_CTL1_CDMODE				12
-#define SPI_CTL1_REPEATTX			16
-#define SPI_CTL1_RXTIMEOUT			24
+#define SPI_CTL0_CSCLR			14U
+#define SPI_CTL0_CSCLR_WIDTH		1U
 
 // NOTE: --- SPI_CTL1 bitfields ---
 
-#define SPI_CTL1_ENABLE_OFS      (0U)
-#define SPI_CTL1_ENABLE_MASK     ((uint32_t)0x00000001U)   
+#define SPI_CTL1_ENABLE			0U
+#define SPI_CTL1_ENABLE_WIDTH		1U
 
-#define SPI_CTL1_LBM_OFS         (1U)
-#define SPI_CTL1_LBM_MASK        ((uint32_t)0x00000002U)  
+#define SPI_CTL1_LBM			1U
+#define SPI_CTL1_LBM_WIDTH		1U
 
-#define SPI_CTL1_CP_OFS          (2U)
-#define SPI_CTL1_CP_MASK         ((uint32_t)0x00000004U) 
+#define SPI_CTL1_CP			2U
+#define SPI_CTL1_CP_WIDTH		1U
 
-#define SPI_CTL1_POD_OFS         (3U)
-#define SPI_CTL1_POD_MASK        ((uint32_t)0x00000008U)
+#define SPI_CTL1_POD			3U
+#define SPI_CTL1_POD_WIDTH		1U
 
-#define SPI_CTL1_MSB_OFS         (4U)
-#define SPI_CTL1_MSB_MASK        ((uint32_t)0x00000010U)   
+#define SPI_CTL1_MSB			4U
+#define SPI_CTL1_MSB_WIDTH		1U
 
-#define SPI_CTL1_PREN_OFS        (5U)
-#define SPI_CTL1_PREN_MASK       ((uint32_t)0x00000020U)  
+#define SPI_CTL1_PREN			5U
+#define SPI_CTL1_PREN_WIDTH		1U
 
-#define SPI_CTL1_PES_OFS         (6U)
-#define SPI_CTL1_PES_MASK        ((uint32_t)0x00000040U) 
+#define SPI_CTL1_PES			6U
+#define SPI_CTL1_PES_WIDTH		1U
 
-#define SPI_CTL1_PTEN_OFS        (8U)
-#define SPI_CTL1_PTEN_MASK       ((uint32_t)0x00000100U) 
+#define SPI_CTL1_PTEN			8U
+#define SPI_CTL1_PTEN_WIDTH		1U
 
-#define SPI_CTL1_CDENABLE_OFS    (11U)
-#define SPI_CTL1_CDENABLE_MASK   ((uint32_t)0x00000800U)
+#define SPI_CTL1_CDENABLE		11U
+#define SPI_CTL1_CDENABLE_WIDTH		1U
 
-#define SPI_CTL1_CDMODE_OFS      (12U)
-#define SPI_CTL1_CDMODE_WIDTH    (1U)                  
-#define SPI_CTL1_CDMODE_MASK     ((uint32_t)0x00001000U)
+#define SPI_CTL1_CDMODE			12U
+#define SPI_CTL1_CDMODE_WIDTH		4U
 
-#define SPI_CTL1_REPEATTX_OFS    (16U)
-#define SPI_CTL1_REPEATTX_MASK   ((uint32_t)0x00010000U)
+#define SPI_CTL1_REPEATTX		16U
+#define SPI_CTL1_REPEATTX_WIDTH		8U
 
-#define SPI_CTL1_RXTIMEOUT_OFS   (24U)
-#define SPI_CTL1_RXTIMEOUT_WIDTH (8U)                  
-#define SPI_CTL1_RXTIMEOUT_MASK  ((uint32_t)0xFF000000U)
+#define SPI_CTL1_RXTIMEOUT		24U
+#define SPI_CTL1_RXTIMEOUT_WIDTH	6U
 
 // Peripheral clock setup
 spi_status_t spi_peri_clk_control(spi_type* p_spi_x, uint8_t EN_or_DI);

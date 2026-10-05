@@ -22,43 +22,22 @@
 #define USART_PIN_SET SET
 #define USART_PIN_RESET RESET
 
-#define READ_BIT(reg, bit) ((reg) & (1UL << (bit)))
-#define READ_FIELD(reg, ofs, width) \
-    (((reg) >> (ofs)) & ((1U << (width)) - 1U))
-#define IS_BIT_SET(reg, bit) (READ_BIT(reg, bit) != 0UL)
-
 #define CLEAR_BIT(reg, bit) ((reg) &= ~(1UL << (bit)))
-#define CLEAR_FIELD_2BIT(reg, pos) ((reg) &= ~(3U << (pos)))
-#define CLEAR_FIELD_4BIT(reg, pos) ((reg) &= ~(0xF << (pos)))
-#define CLEAR_BYTE(reg, pos) ((reg) &= ~(0xFF << (pos)))
-
-#define WRITE_FIELD(reg, pos, width, val)                                      \
-	do {                                                                   \
-		uint32_t mask_ = (1UL << (width)) - 1UL;                       \
-		(reg) = ((reg) & ~(mask_ << (pos))) |                          \
-		        (((uint32_t)(val) & mask_) << (pos));                  \
-	} while (0)
-
-#define WRITE_FIELD_2BIT(reg, pos, val)                                        \
-	do {                                                                   \
-		(reg) = ((reg) & ~(0x3U << (pos))) |                           \
-		        (((uint32_t)(val) & 0x3U) << (pos));                   \
-	} while (0)
-
-#define WRITE_FIELD_4BIT(reg, pos, val)                                        \
-	do {                                                                   \
-		(reg) = ((reg) & ~(0xFU << (pos))) |                           \
-		        (((uint32_t)(val) & 0xFU) << (pos));                   \
-	} while (0)
-
 #define SET_BIT(reg, bit) ((reg) |= (1UL << (bit)))
-#define SET_BITS_BY_VAR(reg, val) ((reg) |= (val))
-#define SET_BYTE(reg, byte_pos, val)                                           \
-	do {                                                                   \
-		CLEAR_BYTE((reg), (byte_pos));                                 \
-		(reg) |= (((uint32_t)(val) & 0xFFU) << (byte_pos));            \
-	} while (0)
 #define TOGGLE_BIT(reg, bit) ((reg) ^= (1UL << (bit)))
+
+#define FIELD_MASK_(width)  (UINT32_MAX >> (32U - (width)))   /* internal, width 1..32 */
+
+#define WRITE_FIELD(reg, pos, width, val)                                  \
+    do {                                                                   \
+        uint32_t fm_ = FIELD_MASK_(width);                                 \
+        (reg) = ((reg) & ~(fm_ << (pos))) |                                \
+                (((uint32_t)(val) & fm_) << (pos));                        \
+    } while (0)
+#define READ_FIELD(reg, pos, width) \
+    ((((uint32_t)(reg)) >> (pos)) & FIELD_MASK_(width))
+
+#define IS_BIT_SET(reg, bit) (READ_BIT(reg, bit) != 0UL)
 
 // NOTE: --- Validation macros ---
 

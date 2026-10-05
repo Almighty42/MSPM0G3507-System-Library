@@ -23,6 +23,7 @@
 
 #define IOMUX_PINCM_PF_POS 0
 #define IOMUX_PINCM_PC_POS 7
+#define IOMUX_PINCM_PF_WIDTH 6
 #define IOMUX_PINCM_PIPD_POS 16
 #define IOMUX_PINCM_PIPU_POS 17
 #define IOMUX_PINCM_INENA_POS 18
@@ -57,13 +58,18 @@ static bool iomux_pf_is_valid_for_pin(iomux_pincm_index_t pincm_index,
 /********************************************************************************
  * @fn				- iomux_configure_pin
  *
- * @brief			- Configures iomux pin
+ * @brief			- Configure a pin's IOMUX
  *
  * @param[iomux_config_t]	- IOMUX configuration struct
  *
  * @return			- Success / Failure status of the function
  *
- * @Note			- None
+ * @Note			- Below
+ * @pre  Any peripheral currently using this pin MUST already be disabled.
+ * @pre  The pin has not been configured since reset, or was released with
+ *       iomux_disconnect_pin().
+ * @post The new function is selected and the pad is connected. The caller
+ *       enables the new peripheral AFTER this call returns.
  *******************************************************************************/
 
 iomux_status_t iomux_configure_pin(const iomux_config_t* iomux_cfg)
@@ -116,6 +122,43 @@ iomux_status_t iomux_configure_pin(const iomux_config_t* iomux_cfg)
 	}
 
 	IOMUX->SECCFG.PINCM[idx] = reg;
+
+	return IOMUX_OK;
+}
+
+/********************************************************************************
+ * @fn				- iomux_disconnect_pin
+ *
+ * @brief			- Disconnect a pin from its current digital
+ * function
+ *
+ * @param[iomux_pincm_index_t]	- IOMUX pin number
+ *
+ * @return			- Success / Failure status of the function
+ *
+ * @Note			- Below
+ * @pre The peripheral using the pin MUST already be disabled.
+ *******************************************************************************/
+
+iomux_status_t iomux_disconnect_pin(iomux_pincm_index_t pin)
+{
+	if (!iomux_pin_is_valid(pin)) {
+		return IOMUX_ERROR_INVALID_PIN;
+	}
+
+	volatile uint32_t* pincm =
+	    &IOMUX->SECCFG.PINCM[IOMUX_PINCM_ARRAY_INDEX(pin)];
+
+	uint32_t v = *pincm;
+
+	// Stop the digital input path and disconnect the pad
+	CLEAR_BIT(v, IOMUX_PINCM_INENA_POS);
+	CLEAR_BIT(v, IOMUX_PINCM_PC_POS);
+	*pincm = v;
+
+	// Only now deselect the peripheral function (PF = 0)
+	CLEAR_FIELD_WITH_MASK(v, IOMUX_PINCM_PF_POS, IOMUX_PINCM_PF_WIDTH);
+	*pincm = v;
 
 	return IOMUX_OK;
 }
@@ -987,7 +1030,7 @@ static bool iomux_pf_is_valid_for_pin(iomux_pincm_index_t pincm_index,
 			switch (pf) {
 				case IOMUX_PIN_PB27_PF_GPIO:
 				case IOMUX_PIN_PB27_PF_COMP2_OUT:
-				case IOMUX_PIN_PB27_PF_SPI1_CS2:
+				case IOMUX_PIN_PB27_PF_SPI1_CS1:
 				case IOMUX_PIN_PB27_PF_TIMA0_C3N:
 				case IOMUX_PIN_PB27_PF_TIMG6_C1:
 				case IOMUX_PIN_PB27_PF_TIMA1_C1:

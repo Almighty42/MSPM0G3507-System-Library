@@ -1,5 +1,9 @@
-#include "mspm0g350x_systick.h"
-#include "mspm0g350x_startup.h"
+#include "../inc/mspm0g350x_systick.h"
+#include "../inc/mspm0g350x_startup.h"
+
+/********************************************************************************
+ *
+ *******************************************************************************/
 
 /********************************************************************************
  * @fn				- sys_delay_cpu_cycles
@@ -15,14 +19,19 @@
  *******************************************************************************/
 void sys_delay_cpu_cycles(uint32_t cpu_cycles)
 {
-	SysTick->RVR = cpu_cycles - 1U;
-	SysTick->CVR = 0U;
-	SysTick->CSR = SYSTICK_CSR_CLKSOURCE | SYSTICK_CSR_ENABLE;
+	while (cpu_cycles > 0) {
+		uint32_t chunk = (cpu_cycles > SYSTICK_MAX_RELOAD)
+		                     ? SYSTICK_MAX_RELOAD
+		                     : cpu_cycles;
 
-	while ((SysTick->CSR & SYSTICK_CSR_COUNTFLAG) == 0U) {
+		SysTick->RVR = chunk - 1;
+		SysTick->CVR = 0;
+		SysTick->CSR = SYSTICK_CSR_CLKSOURCE | SYSTICK_CSR_ENABLE;
+		while ((SysTick->CSR & SYSTICK_CSR_COUNTFLAG) == 0) {
+		}
+		SysTick->CSR = 0;
+		cpu_cycles -= chunk;
 	}
-
-	SysTick->CSR = 0U;
 }
 
 /********************************************************************************
