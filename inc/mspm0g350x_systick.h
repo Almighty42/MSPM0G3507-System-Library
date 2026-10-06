@@ -24,6 +24,9 @@
 #define SYSCTL_MCLKCFG_UDIV_NODIVIDE    ((uint32_t)0x00000000U)   /* ULPCLK = MCLK */
 #define SYSCTL_MCLKCFG_UDIV_DIVIDE2     ((uint32_t)0x00000010U)   /* ULPCLK = MCLK/2 */
 
+void sys_tick_init(uint32_t cpu_hz);
+uint32_t sys_tick_get_ms(void);
+
 void sys_delay_cpu_cycles(uint32_t cpu_cycles);
 uint32_t sys_clock_get_ulpclk_divider(void);
 

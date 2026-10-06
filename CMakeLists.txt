@@ -20,6 +20,7 @@ add_executable(${PROJECT_NAME}
     src/mspm0g350x_spi.c
     src/mspm0g350x_i2c.c
     src/main.c
+    examples/examples_spi.c
 )
 
 set_target_properties(${PROJECT_NAME} PROPERTIES SUFFIX ".elf")

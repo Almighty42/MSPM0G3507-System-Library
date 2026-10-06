@@ -6,6 +6,7 @@
 
 // Polling / blocking value used in loops in functions used by the driver
 #define SPI_SOFTWARE_TIMEOUT	1000000
+#define SPI_DEFAULT_TIMEOUT_MS 100U
 
 #ifndef SPI_DUMMY_BYTE
 #define SPI_DUMMY_BYTE 0xFFU
