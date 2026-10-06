@@ -1,21 +1,16 @@
 #include "../inc/mspm0g350x_i2c.h"
 #include "../inc/mspm0g350x_startup.h"
 #include "mspm0g350x_systick.h"
+#include <stdbool.h>
 
 /********************************************************************************
  *
  * TODO: Finish work on functions and then test them one by one:
- * - i2c_controller_write_pl
  * - i2c_controller_read_pl
  * - i2c_controller_write_read_pl
  * - i2c_target_write_pl
  * - i2c_target_read_pl
  * - i2c_peri_control
- *
- * TODO:
- * Research how open drain works ( in particular i2c application )
- *
- * TODO: Implement Systick where it is necessary ( I2C )
  *
  *******************************************************************************/
 
@@ -47,6 +42,23 @@ static inline void i2c_config_controller(i2c_type* port, uint16_t tpr,
                                          uint8_t clk_stretch);
 static inline void i2c_config_target(i2c_type* port, uint16_t own_addr,
                                      uint8_t addr_mode, uint8_t clk_stretch);
+static uint32_t i2c_remaining_ms(uint32_t start_ms, uint32_t timeout_ms);
+static i2c_status_t i2c_decode_error(const i2c_type* p_i2c_x);
+static uint32_t i2c_tx_fifo_space(const i2c_type* p_i2c_x);
+static i2c_status_t i2c_flush_fifos(i2c_type* p_i2c_x);
+static i2c_status_t i2c_wait_bus_free(const i2c_type* p_i2c_x,
+                                      uint32_t start_ms, uint32_t timeout_ms);
+static void i2c_post_start_guard(const i2c_handle_t* p_h);
+static i2c_status_t i2c_ctrl_validate(const i2c_handle_t* p_h, uint16_t addr);
+static i2c_status_t i2c_ctrl_begin(i2c_type* p, uint32_t start_ms,
+                                   uint32_t timeout);
+static void i2c_ctrl_abort(i2c_type* p);
+static void i2c_write_csa(i2c_type* p, uint16_t addr, uint8_t addr_mode,
+                          uint32_t dir);
+static i2c_status_t i2c_drain_rx(i2c_type* p, uint8_t* buf, uint32_t len,
+                                 uint32_t start_ms, uint32_t timeout);
+static i2c_status_t i2c_wait_done(const i2c_type* p, uint32_t start_ms,
+                                  uint32_t timeout);
 
 // NOTE: @PERIPHERAL_CLOCK_SETUP
 
@@ -277,64 +289,124 @@ i2c_status_t i2c_controller_write_pl(i2c_handle_t* p_i2c_handle, uint16_t addr,
                                      const uint8_t* p_tx_buffer, uint32_t len,
                                      uint32_t timeout)
 {
-	// i2c_controller_write_pl:
+	// Validate handle, role, power, and ACTIVE.
+	VALIDATE_PTR(p_i2c_handle, I2C_ERROR_NULL_PTR);
+	i2c_type* port = p_i2c_handle->p_I2Cx;
+	VALIDATE_I2C_PORT(port);
+
+	if (len > 8U) {
+		return I2C_ERROR_INVALID_LEN;
+	}
+
+	if (p_i2c_handle->i2c_config.I2C_Device_Mode !=
+	    I2C_DEVICE_MODE_CONTROLLER) {
+		return I2C_ERROR_INVALID_MODE;
+	}
+	if (!IS_BIT_SET(port->PWREN, I2C_PWREN_ENABLE) ||
+	    !IS_BIT_SET(port->CCR, I2C_CCR_ACTIVE)) {
+		return I2C_ERROR_NOT_ENABLED;
+	}
+
+	VALIDATE_PTR(p_tx_buffer, I2C_ERROR_NULL_PTR);
+	VALIDATE_I2C_LEN(len);
+	if (len > I2C_CCTR_CBLEN_VAL_MAX) {
+		return I2C_ERROR_INVALID_LEN;
+	}
+
+	const uint8_t addr_mode = p_i2c_handle->i2c_config.I2C_Addressing_Mode;
+	VALIDATE_I2C_ADDRESS(addr, addr_mode);
+
+	// One absolute deadline for the whole transfer.
+	const uint32_t start_ms = sys_tick_get_ms();
+
+	// Controller idle and bus free before a new transaction.
+	i2c_status_t st =
+	    i2c_wait_controller_idle(port, i2c_remaining_ms(start_ms, timeout));
+	if (st != I2C_OK) {
+		return st;
+	}
+	st = i2c_wait_bus_free(port, start_ms, timeout);
+	if (st != I2C_OK) {
+		return st;
+	}
+
+	// Drop stale FIFO contents, then preload as much data as fits.
+	st = i2c_flush_fifos(port);
+	if (st != I2C_OK) {
+		return st;
+	}
+
+	uint32_t queued = 0U;
+	while ((queued < len) && (i2c_tx_fifo_space(port) > 0U)) {
+		port->CTXDATA = (uint32_t)p_tx_buffer[queued];
+		queued++;
+	}
 	//
-	// Validate:
-	// - Handle and controller role.
-	// - Peripheral power and CCR.ACTIVE.
-	// - TX buffer.
-	// - len in the range 1..0xFFF.
-	// - Address against the configured address mode.
-	//
-	// Create one absolute deadline for the complete transfer.
-	//
-	// Wait until CSR.IDLE is set.
-	// Wait until CSR.BUSBSY is clear for this new transaction.
-	//
-	// Flush stale controller FIFO contents.
-	//
-	// Preload as many bytes as possible into CTXDATA.
-	//
-	// Build CSA:
-	// - CSA.TADDR = target address.
-	// - CSA.CMODE = configured address mode.
-	// - CSA.DIR = transmit.
-	//
-	// Build one CCTR value:
-	// - CCTR.CBLEN = len.
-	// - CCTR.ACK = don't-care/cleared for transmit.
-	// - CCTR.START = 1.
-	// - CCTR.STOP = 1.
-	// - CCTR.BURSTRUN = 1.
-	//
-	// Write CCTR once to launch the transaction.
-	//
-	// Apply the three-I2C-clock post-start guard.
-	//
-	// While bytes remain to be queued:
-	// - Wait for TX FIFO space or the TX FIFO trigger condition.
-	// - Check ADRACK, DATACK, ARBLST, hardware timeout, and software
-	// deadline.
-	// - Write further bytes to CTXDATA.
-	//
-	// Wait until the controller transaction finishes.
-	//
-	// Decode final status:
-	// - CSR.ARBLST -> I2C_ERROR_ARBITRATION_LOST.
-	// - CSR.ADRACK -> I2C_ERROR_NACK_ADDR.
-	// - CSR.DATACK -> I2C_ERROR_NACK_DATA.
-	// - Deadline expiry -> I2C_ERROR_TIMEOUT.
-	//
-	// Confirm the controller returned to idle.
-	// Return I2C_OK.
-	//
-	// Source:
-	// - TRM §25.2.4.1.1, Table 25-4: transmit from idle
-	// - TRM §25.2.4.1.2: controller transmitter operation
-	// - TRM §25.3.32: CSA
-	// - TRM §25.3.33: CCTR
-	// - TRM §25.3.34: CSR
-	// - TRM §25.3.36: CTXDATA
+	// Target address, address mode, direction.
+	uint32_t csa = 0U;
+	WRITE_FIELD(csa, I2C_CSA_TADDR, I2C_CSA_TADDR_WIDTH, addr);
+	WRITE_FIELD(csa, I2C_CSA_CMODE, I2C_CSA_CMODE_WIDTH, addr_mode);
+	WRITE_FIELD(csa, I2C_CSA_DIR, I2C_CSA_DIR_WIDTH, DISABLE);
+	port->CSA = csa;
+
+	// One CCTR write launches START + address + data + STOP.
+	uint32_t cctr = 0U;
+	WRITE_FIELD(cctr, I2C_CCTR_CBLEN, I2C_CCTR_CBLEN_WIDTH, len);
+	WRITE_FIELD(cctr, I2C_CCTR_START, I2C_CCTR_START_WIDTH, ENABLE);
+	WRITE_FIELD(cctr, I2C_CCTR_STOP, I2C_CCTR_STOP_WIDTH, ENABLE);
+	WRITE_FIELD(cctr, I2C_CCTR_BURSTRUN, I2C_CCTR_BURSTRUN_WIDTH, ENABLE);
+	port->CCTR = cctr;
+
+	i2c_post_start_guard(p_i2c_handle);
+
+	// Refill TX FIFO while bytes remain, watching for errors.
+	st = I2C_OK;
+	while ((queued < len) && (st == I2C_OK)) {
+		st = i2c_decode_error(port);
+		if (st != I2C_OK) {
+			break;
+		}
+		if (i2c_remaining_ms(start_ms, timeout) == 0U) {
+			st = I2C_ERROR_TIMEOUT;
+			break;
+		}
+		if (i2c_tx_fifo_space(port) > 0U) {
+			port->CTXDATA = (uint32_t)p_tx_buffer[queued];
+			queued++;
+		}
+	}
+
+	// Wait for the controller to finish, still checking for errors.
+	st = I2C_OK;
+	while (st == I2C_OK) {
+		st = i2c_decode_error(port);
+		if (st != I2C_OK) {
+			break;
+		}
+		const uint32_t csr = port->CSR;
+		if (IS_BIT_SET(csr, I2C_CSR_IDLE) &&
+		    !IS_BIT_SET(csr, I2C_CSR_BUSY)) {
+			break;
+		}
+		if (i2c_remaining_ms(start_ms, timeout) == 0U) {
+			st = I2C_ERROR_TIMEOUT;
+		}
+	}
+
+	// Final decode: errors can latch right as BUSY clears.
+	if (st == I2C_OK) {
+		st = i2c_decode_error(port);
+	}
+
+	if (st != I2C_OK) {
+		// Let the controller settle and discard unsent bytes.
+		// A bounded wait: ignore its result, we already have an error.
+		(void)i2c_wait_controller_idle(port, I2C_DEFAULT_TIMEOUT_MS);
+		i2c_flush_fifos(port);
+		return st;
+	}
+
+	return I2C_OK;
 }
 
 /********************************************************************************
@@ -359,55 +431,45 @@ i2c_status_t i2c_controller_read_pl(i2c_handle_t* p_i2c_handle, uint16_t addr,
                                     uint8_t* p_rx_buffer, uint32_t len,
                                     uint32_t timeout)
 {
-	// i2c_controller_read_pl:
-	//
-	// Validate:
-	// - Handle and controller role.
-	// - Peripheral power and CCR.ACTIVE.
-	// - RX buffer.
-	// - len in the range 1..0xFFF.
-	// - Target address.
-	//
-	// Create one absolute deadline.
-	//
-	// Wait for CSR.IDLE and a free bus.
-	//
-	// Flush stale RX FIFO contents.
-	//
-	// Build CSA:
-	// - CSA.TADDR = target address.
-	// - CSA.CMODE = configured address mode.
-	// - CSA.DIR = receive.
-	//
-	// Build one CCTR value:
-	// - CCTR.CBLEN = len.
-	// - CCTR.CACKOEN = 0 for the first implementation.
-	// - CCTR.ACK = 0 so the final received byte is NACKed.
-	// - CCTR.START = 1.
-	// - CCTR.STOP = 1.
-	// - CCTR.BURSTRUN = 1.
-	//
-	// Launch the transfer with one CCTR write.
-	//
-	// Apply the three-I2C-clock post-start guard.
-	//
-	// Until len bytes have been copied:
-	// - Wait for controller RX data.
-	// - Check address NACK, arbitration loss, hardware timeout,
-	//   and the software deadline.
-	// - Read CRXDATA.VALUE into the caller's buffer.
-	//
-	// Wait for CSR.BUSY to clear and CSR.IDLE to set.
-	//
-	// Confirm exactly len bytes were received.
-	// Decode final controller status.
-	// Return I2C_OK.
-	//
-	// Source:
-	// - TRM §25.2.4.1.1, Table 25-6: receive from idle
-	// - TRM §25.2.4.1.2: controller receiver operation
-	// - TRM §25.3.33: CCTR.ACK, STOP, START, BURSTRUN, CBLEN
-	// - TRM §25.3.35: CRXDATA.VALUE
+	i2c_status_t st = i2c_ctrl_validate(p_i2c_handle, addr);
+	if (st != I2C_OK) {
+		return st;
+	}
+	VALIDATE_PTR(p_rx_buffer, I2C_ERROR_NULL_PTR);
+	VALIDATE_I2C_LEN(len);
+	if (len > I2C_CCTR_CBLEN_VAL_MAX) {
+		return I2C_ERROR_INVALID_LEN;
+	}
+
+	i2c_type* port = p_i2c_handle->p_I2Cx;
+	const uint32_t start_ms = sys_tick_get_ms();
+
+	st = i2c_ctrl_begin(port, start_ms, timeout);
+	if (st != I2C_OK) {
+		return st;
+	}
+
+	i2c_write_csa(port, addr, p_i2c_handle->i2c_config.I2C_Addressing_Mode,
+	              I2C_CSA_DIR_VAL_RECEIVE);
+
+	/* CACKOEN = 0, ACK = 0: hardware NACKs the last byte, then STOP */
+	uint32_t cctr = 0U;
+	WRITE_FIELD(cctr, I2C_CCTR_CBLEN, I2C_CCTR_CBLEN_WIDTH, len);
+	WRITE_FIELD(cctr, I2C_CCTR_START, I2C_CCTR_START_WIDTH, ENABLE);
+	WRITE_FIELD(cctr, I2C_CCTR_STOP, I2C_CCTR_STOP_WIDTH, ENABLE);
+	WRITE_FIELD(cctr, I2C_CCTR_BURSTRUN, I2C_CCTR_BURSTRUN_WIDTH, ENABLE);
+	port->CCTR = cctr;
+
+	i2c_post_start_guard(p_i2c_handle);
+
+	st = i2c_drain_rx(port, p_rx_buffer, len, start_ms, timeout);
+	if (st == I2C_OK) {
+		st = i2c_wait_done(port, start_ms, timeout);
+	}
+	if (st != I2C_OK) {
+		i2c_ctrl_abort(port);
+	}
+	return st;
 }
 
 /********************************************************************************
@@ -434,57 +496,6 @@ i2c_status_t i2c_controller_write_read_pl(
     i2c_handle_t* p_i2c_handle, uint16_t addr, const uint8_t* write_buffer,
     uint32_t wlen, uint8_t* receive_buffer, uint32_t rlen, uint32_t timeout)
 {
-	// i2c_controller_write_read_pl:
-	//
-	// Validate both buffers, both lengths, address, controller role,
-	// peripheral power, and CCR.ACTIVE.
-	//
-	// Restrict wlen and rlen independently to 1..0xFFF.
-	//
-	// Create one deadline shared by both phases.
-	//
-	// Wait for CSR.IDLE and CSR.BUSBSY == 0 only before the first phase.
-	//
-	// Flush stale controller FIFOs.
-	//
-	// WRITE PHASE:
-	// - Preload controller TX FIFO.
-	// - Program CSA for transmit.
-	// - Program CCTR.CBLEN = wlen.
-	// - Set START = 1.
-	// - Set STOP = 0.
-	// - Set BURSTRUN = 1.
-	// - Start the write burst.
-	// - Apply the post-start guard.
-	// - Refill TX FIFO until all write bytes are queued.
-	// - Wait for the write burst to finish.
-	// - Check address NACK, data NACK, arbitration loss, and timeout.
-	//
-	// Do not wait for CSR.BUSBSY to clear.
-	// The bus must remain owned between phases.
-	//
-	// READ PHASE:
-	// - Program CSA for receive using the same target address.
-	// - Program CCTR.CBLEN = rlen.
-	// - Set ACK = 0 for the final byte.
-	// - Set START = 1; because the bus is owned, this becomes repeated
-	// START.
-	// - Set STOP = 1.
-	// - Set BURSTRUN = 1.
-	// - Start the read burst.
-	// - Apply the post-start guard.
-	// - Drain CRXDATA until rlen bytes are received.
-	// - Wait for completion and final STOP.
-	// - Decode errors.
-	//
-	// Return success only if both phases completed and exactly rlen bytes
-	// were copied.
-	//
-	// Source:
-	// - TRM §25.2.3.6: repeated START
-	// - TRM §25.2.4.1.1, Tables 25-8 and 25-9
-	// - TRM §25.3.32: CSA.DIR
-	// - TRM §25.3.33: CCTR.START, STOP, ACK, CBLEN, BURSTRUN
 }
 
 // NOTE: @DATA_SEND_RECEIVE_POLLING_TARGET
@@ -614,40 +625,93 @@ i2c_status_t i2c_target_read_pl(i2c_handle_t* p_i2c_handle,
 
 i2c_status_t i2c_peri_control(i2c_type* p_i2c_x, uint8_t EN_or_DI)
 {
-	// i2c_peri_control:
-	//
-	// Validate handle, peripheral, configured role, and EN_or_DI.
-	//
-	// Verify PWREN.ENABLE before attempting role activation.
-	//
-	// ENABLE, controller role:
-	// - Require TCTR.ACTIVE == 0.
-	// - Require a valid functional clock selection.
-	// - Require CCR.ACTIVE == 0.
-	// - Set CCR.ACTIVE once.
-	// - Verify that it became active.
-	// - Do not write ACTIVE=1 again while already active.
-	//
-	// ENABLE, target role:
-	// - Require CCR.ACTIVE == 0.
-	// - Require at least one enabled valid own address.
-	// - Require TCTR.ACTIVE == 0.
-	// - Set TCTR.ACTIVE once.
-	// - Verify that it became active.
-	//
-	// DISABLE, controller role:
-	// - Wait for CSR.BUSY == 0 and CSR.IDLE == 1.
-	// - Clear CCR.ACTIVE.
-	//
-	// DISABLE, target role:
-	// - Wait for TSR.BUSBSY == 0.
-	// - Clear TCTR.ACTIVE.
-	//
-	// Source:
-	// - TRM §25.3.38: CCR.ACTIVE
-	// - TRM §25.3.44: TOAR.OAREN and OAR
-	// - TRM §25.3.46: TCTR.ACTIVE
-	// - TRM §25.3.47: TSR.BUSBSY
+	VALIDATE_PTR(p_i2c_x, I2C_ERROR_NULL_PTR);
+	VALIDATE_I2C_PORT(p_i2c_x);
+
+	if ((EN_or_DI != ENABLE) && (EN_or_DI != DISABLE)) {
+		return I2C_ERROR_INVALID_STATE;
+	}
+
+	/* Registers are not accessible while PWREN.ENABLE == 0 */
+	if (!IS_BIT_SET(p_i2c_x->PWREN, I2C_PWREN_ENABLE)) {
+		return I2C_ERROR_NOT_ENABLED;
+	}
+
+	const bool ctrl_active = IS_BIT_SET(p_i2c_x->CCR, I2C_CCR_ACTIVE);
+	const bool tgt_active = IS_BIT_SET(p_i2c_x->TCTR, I2C_TCTR_ACTIVE);
+
+	if (EN_or_DI == ENABLE) {
+		/* Both roles active at once is never valid */
+		if (ctrl_active && tgt_active) {
+			return I2C_ERROR_INVALID_STATE;
+		}
+		/* Role is already running: nothing to do, never write ACTIVE
+		 * twice */
+		if (ctrl_active || tgt_active) {
+			return I2C_OK;
+		}
+
+		/* Role selection: i2c_config_target() sets TOAR.OAREN, the
+		 * controller path never does, and i2c_reset() clears it. */
+		const uint32_t toar = p_i2c_x->TOAR;
+
+		if (IS_BIT_SET(toar, I2C_TOAR_OAREN)) {
+			/* ---- Target ---- */
+			const uint32_t oar =
+			    READ_FIELD(toar, I2C_TOAR_OAR, I2C_TOAR_OAR_WIDTH);
+			const uint32_t tmod = READ_FIELD(toar, I2C_TOAR_TMODE,
+			                                 I2C_TOAR_TMODE_WIDTH);
+			VALIDATE_I2C_ADDRESS(oar, tmod);
+
+			SET_BIT(p_i2c_x->TCTR, I2C_TCTR_ACTIVE);
+			if (!IS_BIT_SET(p_i2c_x->TCTR, I2C_TCTR_ACTIVE)) {
+				return I2C_ERROR_NOT_ENABLED;
+			}
+			return I2C_OK;
+		}
+
+		/* ---- Controller ---- */
+		const uint32_t clk_sel =
+		    READ_BIT(p_i2c_x->CLKSEL, I2C_CLKSEL_MFCLK_SEL) +
+		    READ_BIT(p_i2c_x->CLKSEL, I2C_CLKSEL_BUSCLK_SEL);
+		if (clk_sel != 1U) {
+			return I2C_ERROR_INVALID_CLOCK_SRC;
+		}
+
+		SET_BIT(p_i2c_x->CCR, I2C_CCR_ACTIVE);
+		if (!IS_BIT_SET(p_i2c_x->CCR, I2C_CCR_ACTIVE)) {
+			return I2C_ERROR_NOT_ENABLED;
+		}
+		return I2C_OK;
+	}
+
+	/* ---- DISABLE ---- */
+	if (ctrl_active) {
+		const uint32_t start = sys_tick_get_ms();
+		for (;;) {
+			const uint32_t csr = p_i2c_x->CSR;
+			if (!IS_BIT_SET(csr, I2C_CSR_BUSY) &&
+			    IS_BIT_SET(csr, I2C_CSR_IDLE)) {
+				break;
+			}
+			if ((uint32_t)(sys_tick_get_ms() - start) >=
+			    I2C_DEFAULT_TIMEOUT_MS) {
+				return I2C_BUSY;
+			}
+		}
+		CLEAR_BIT(p_i2c_x->CCR, I2C_CCR_ACTIVE);
+	}
+
+	if (tgt_active) {
+		const i2c_status_t st =
+		    i2c_wait_target_idle(p_i2c_x, I2C_DEFAULT_TIMEOUT_MS);
+		if (st != I2C_OK) {
+			return st;
+		}
+		CLEAR_BIT(p_i2c_x->TCTR, I2C_TCTR_ACTIVE);
+	}
+
+	return I2C_OK;
 }
 
 // NOTE: @STATIC_HELPERS
@@ -771,4 +835,170 @@ static inline void i2c_config_target(i2c_type* port, uint16_t own_addr,
 	WRITE_FIELD(port->TCTR, I2C_TCTR_TCLKSTRETCH,
 	            I2C_TCTR_TCLKSTRETCH_WIDTH, clk_stretch);
 	CLEAR_BIT(port->TCTR, I2C_TCTR_GENCALL);
+}
+
+static uint32_t i2c_remaining_ms(uint32_t start_ms, uint32_t timeout_ms)
+{
+	const uint32_t elapsed = (uint32_t)(sys_tick_get_ms() - start_ms);
+	return (elapsed >= timeout_ms) ? 0U : (timeout_ms - elapsed);
+}
+
+static i2c_status_t i2c_decode_error(const i2c_type* p_i2c_x)
+{
+	const uint32_t csr = p_i2c_x->CSR;
+
+	if (IS_BIT_SET(csr, I2C_CSR_ARBLST)) {
+		return I2C_ERROR_ARBITRATION_LOST;
+	}
+	if (IS_BIT_SET(csr, I2C_CSR_ADRACK)) {
+		return I2C_ERROR_NACK_ADDR;
+	}
+	if (IS_BIT_SET(csr, I2C_CSR_DATACK)) {
+		return I2C_ERROR_NACK_DATA;
+	}
+	if (IS_BIT_SET(csr, I2C_CSR_ERR)) {
+		return I2C_ERROR_BUS_ERROR;
+	}
+	return I2C_OK;
+}
+static uint32_t i2c_tx_fifo_space(const i2c_type* p_i2c_x)
+{
+	return READ_FIELD(p_i2c_x->CFIFOSR, I2C_CFIFOSR_TXFIFOCNT,
+	                  I2C_CFIFOSR_TXFIFOCNT_WIDTH);
+}
+
+static i2c_status_t i2c_flush_fifos(i2c_type* p_i2c_x)
+{
+	// Only call while CSR.BUSY == 0 (CFIFOSR is only valid then).
+	SET_BIT(p_i2c_x->CFIFOCTL, I2C_CFIFOCTL_TXFLUSH);
+	SET_BIT(p_i2c_x->CFIFOCTL, I2C_CFIFOCTL_RXFLUSH);
+
+	i2c_status_t st = I2C_OK;
+	const uint32_t start = sys_tick_get_ms();
+	while ((READ_FIELD(p_i2c_x->CFIFOSR, I2C_CFIFOSR_TXFIFOCNT,
+	                   I2C_CFIFOSR_TXFIFOCNT_WIDTH) != I2C_FIFO_DEPTH) ||
+	       (READ_FIELD(p_i2c_x->CFIFOSR, I2C_CFIFOSR_RXFIFOCNT,
+	                   I2C_CFIFOSR_RXFIFOCNT_WIDTH) != 0U)) {
+		if ((uint32_t)(sys_tick_get_ms() - start) >=
+		    I2C_DEFAULT_TIMEOUT_MS) {
+			st = I2C_ERROR_TIMEOUT;
+			break;
+		}
+	}
+
+	CLEAR_BIT(p_i2c_x->CFIFOCTL, I2C_CFIFOCTL_TXFLUSH);
+	CLEAR_BIT(p_i2c_x->CFIFOCTL, I2C_CFIFOCTL_RXFLUSH);
+	return st;
+}
+
+static i2c_status_t i2c_wait_bus_free(const i2c_type* p_i2c_x,
+                                      uint32_t start_ms, uint32_t timeout_ms)
+{
+	while (IS_BIT_SET(p_i2c_x->CSR, I2C_CSR_BUSBSY)) {
+		if (i2c_remaining_ms(start_ms, timeout_ms) == 0U) {
+			return I2C_ERROR_BUS_BUSY;
+		}
+	}
+	return I2C_OK;
+}
+
+static void i2c_post_start_guard(const i2c_handle_t* p_h)
+{
+	// Wait at least three I2C functional-clock cycles before trusting
+	// CSR.BUSY (SDK errata workaround, see release notes).
+	// Exact for BUSCLK only; MFCLK needs its own CPU-cycle ratio.
+	const uint32_t ratio = (uint32_t)p_h->i2c_config.I2C_Clock_Divider + 1U;
+	sys_delay_cpu_cycles(3U * ratio * sys_clock_get_ulpclk_divider());
+}
+
+static i2c_status_t i2c_ctrl_validate(const i2c_handle_t* p_h, uint16_t addr)
+{
+	VALIDATE_PTR(p_h, I2C_ERROR_NULL_PTR);
+	const i2c_type* port = p_h->p_I2Cx;
+	VALIDATE_I2C_PORT(port);
+
+	if (p_h->i2c_config.I2C_Device_Mode != I2C_DEVICE_MODE_CONTROLLER) {
+		return I2C_ERROR_INVALID_MODE;
+	}
+	if (!IS_BIT_SET(port->PWREN, I2C_PWREN_ENABLE) ||
+	    !IS_BIT_SET(port->CCR, I2C_CCR_ACTIVE)) {
+		return I2C_ERROR_NOT_ENABLED;
+	}
+	const uint8_t addr_mode = p_h->i2c_config.I2C_Addressing_Mode;
+	VALIDATE_I2C_ADDRESS(addr, addr_mode);
+	return I2C_OK;
+}
+
+static i2c_status_t i2c_ctrl_begin(i2c_type* p, uint32_t start_ms,
+                                   uint32_t timeout)
+{
+	i2c_status_t st =
+	    i2c_wait_controller_idle(p, i2c_remaining_ms(start_ms, timeout));
+	if (st != I2C_OK) {
+		return st;
+	}
+	st = i2c_wait_bus_free(p, start_ms, timeout);
+	if (st != I2C_OK) {
+		return st;
+	}
+	return i2c_flush_fifos(p);
+}
+
+static void i2c_ctrl_abort(i2c_type* p)
+{
+	(void)i2c_wait_controller_idle(p, I2C_DEFAULT_TIMEOUT_MS);
+	(void)i2c_flush_fifos(p);
+}
+
+static void i2c_write_csa(i2c_type* p, uint16_t addr, uint8_t addr_mode,
+                          uint32_t dir)
+{
+	uint32_t csa = 0U;
+	WRITE_FIELD(csa, I2C_CSA_TADDR, I2C_CSA_TADDR_WIDTH, addr);
+	WRITE_FIELD(csa, I2C_CSA_CMODE, I2C_CSA_CMODE_WIDTH, addr_mode);
+	WRITE_FIELD(csa, I2C_CSA_DIR, I2C_CSA_DIR_WIDTH, dir);
+	p->CSA = csa;
+}
+
+static i2c_status_t i2c_drain_rx(i2c_type* p, uint8_t* buf, uint32_t len,
+                                 uint32_t start_ms, uint32_t timeout)
+{
+	uint32_t n = 0U;
+	while (n < len) {
+		const i2c_status_t st = i2c_decode_error(p);
+		if (st != I2C_OK) {
+			return st;
+		}
+		if (READ_FIELD(p->CFIFOSR, I2C_CFIFOSR_RXFIFOCNT,
+		               I2C_CFIFOSR_RXFIFOCNT_WIDTH) != 0U) {
+			buf[n] = (uint8_t)(p->CRXDATA &
+			                   0xFFU); /* CRXDATA.VALUE [7:0] */
+			n++;
+			continue;
+		}
+		if (i2c_remaining_ms(start_ms, timeout) == 0U) {
+			return I2C_ERROR_TIMEOUT;
+		}
+	}
+	return I2C_OK;
+}
+
+static i2c_status_t i2c_wait_done(const i2c_type* p, uint32_t start_ms,
+                                  uint32_t timeout)
+{
+	for (;;) {
+		const i2c_status_t st = i2c_decode_error(p);
+		if (st != I2C_OK) {
+			return st;
+		}
+		const uint32_t csr = p->CSR;
+		if (IS_BIT_SET(csr, I2C_CSR_IDLE) &&
+		    !IS_BIT_SET(csr, I2C_CSR_BUSY)) {
+			break;
+		}
+		if (i2c_remaining_ms(start_ms, timeout) == 0U) {
+			return I2C_ERROR_TIMEOUT;
+		}
+	}
+	return i2c_decode_error(p);
 }
