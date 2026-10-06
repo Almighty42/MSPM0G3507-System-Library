@@ -5,7 +5,6 @@
 /********************************************************************************
  *
  * TODO: Finish work on functions and then test them one by one:
- * - i2c_de_init
  * - i2c_controller_write_pl
  * - i2c_controller_read_pl
  * - i2c_controller_write_read_pl
@@ -229,34 +228,30 @@ i2c_status_t i2c_init(i2c_handle_t* p_i2c_handle)
 
 i2c_status_t i2c_de_init(i2c_type* p_i2c_x)
 {
-	// i2c_de_init:
-	//
-	// Validate the peripheral.
-	//
-	// Determine whether controller mode, target mode, or neither is active.
-	//
-	// If controller mode is active:
-	// - Wait for CSR.BUSY to clear and CSR.IDLE to set.
-	// - Clear CCR.ACTIVE.
-	//
-	// If target mode is active:
-	// - Wait for TSR.BUSBSY to clear.
-	// - Clear TCTR.ACTIVE.
-	//
-	// Flush controller and target FIFOs while inactive.
-	//
-	// Assert peripheral reset through RSTCTL.
-	// Wait for STAT.RESETSTKY.
-	//
-	// Disable peripheral power through PWREN.
-	//
-	// Return timeout/busy rather than forcibly resetting an active bus.
-	//
-	// Source:
-	// - TRM §25.2.5: reset considerations
-	// - TRM §25.3.1: PWREN
-	// - TRM §25.3.2: RSTCTL
-	// - TRM §25.3.4: STAT.RESETSTKY
+	VALIDATE_PTR(p_i2c_x, I2C_ERROR_NULL_PTR);
+	VALIDATE_I2C_PORT(p_i2c_x);
+
+	// Peripheral is unpowered: registers are not accessible, nothing to
+	// undo.
+	if (!IS_BIT_SET(p_i2c_x->PWREN, I2C_PWREN_ENABLE)) {
+		return I2C_OK;
+	}
+
+	// Wait for the bus, then clear CCR.ACTIVE / TCTR.ACTIVE if set.
+	// Returns I2C_BUSY rather than forcing a reset on a live bus.
+	i2c_status_t st = i2c_deactivate(p_i2c_x, I2C_DEFAULT_TIMEOUT_MS);
+	if (st != I2C_OK) {
+		return st;
+	}
+
+	// Reset to a known state while powered, then wait for RESETSTKY.
+	st = i2c_reset(p_i2c_x);
+	if (st != I2C_OK) {
+		return st;
+	}
+
+	// Both roles are now inactive, so the DISABLE path accepts this call.
+	return i2c_peri_clk_control(p_i2c_x, DISABLE);
 }
 
 // NOTE: @DATA_SEND_RECEIVE_POLLING_CONTROLLER
