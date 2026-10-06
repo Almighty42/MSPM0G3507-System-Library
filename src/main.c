@@ -1,30 +1,23 @@
-#include "../examples/example_spi.h"
+#include "../examples/example_i2c.h"
+#include "../inc/mspm0g350x_i2c.h"
 #include "../inc/mspm0g350x_startup.h"
+#include "../inc/mspm0g350x_systick.h"
 #include <stdint.h>
 
-#ifndef SPI_EXPECTED_BYTE
-#define SPI_EXPECTED_BYTE 0xFFU
-#endif
+static i2c_handle_t g_i2c1;
+volatile i2c_status_t g_i2c1_status = I2C_ERROR_INVALID_STATE;
 
-static spi_handle_t spi1;
+__attribute__((noinline)) static void test_checkpoint(void)
+{
+	__asm volatile("" ::: "memory");
+}
 
 int main(void)
 {
-	static volatile spi_status_t config_status;
-	static volatile spi_status_t write_status;
-	static volatile spi_status_t read_status;
-	static volatile uint32_t read_mismatches;
-	uint32_t mismatches = 0U;
+	sys_tick_init(40000000U);
+	g_i2c1_status = i2c1_config(&g_i2c1);
 
-	config_status = spi1_config(&spi1);
-	if (config_status != SPI_OK) {
-		while (1) {
-		}
-	}
-
-	write_status = spi1_example_write(&spi1);
-	read_status = spi1_example_read(&spi1, SPI_EXPECTED_BYTE, &mismatches);
-	read_mismatches = mismatches;
+	test_checkpoint();
 
 	while (1) {
 	}

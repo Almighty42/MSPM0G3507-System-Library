@@ -4,13 +4,17 @@
 #include "../inc/mspm0g350x_startup.h"
 #include <stdint.h>
 
+// Polling / timing constants
+#define I2C_DEFAULT_TIMEOUT_MS          100U
+#define I2C_PWREN_STARTUP_ULPCLK_CYCLES 4U
+
 // NOTE: --- Structures for I2C ---
 
 typedef struct
 {
 	uint8_t I2C_Device_Mode;					// Possible values from @I2C_DEVICE_MODE
 	uint8_t I2C_Clock_Source;					// Possible values from @I2C_CLOCK_SOURCE
-	uint8_t I2C_Clock_Prescale;					// Possible values from @I2C_CLOCK_PRESCALE
+	uint8_t I2C_Clock_Divider;					// Possible values from @I2C_CLOCK_PRESCALE
 	uint16_t I2C_Timer_Period;					// Possible values from @I2C_TIMER_PERIOD
 	uint8_t I2C_Addressing_Mode;					// Possible values from @I2C_ADDRESSING_MODE
 	uint16_t  I2C_Own_Address;					// Possible values from @I2C_OWN_ADDRESS
@@ -140,6 +144,86 @@ typedef enum {
         return I2C_ERROR_INVALID_LEN;                  \
     }                                                   \
 } while (0)
+
+// NOTE: --- I2C_PWREN bitfields ---
+
+#define I2C_PWREN_ENABLE		0U
+#define I2C_PWREN_ENABLE_WIDTH		1U
+
+#define I2C_PWREN_KEY			24U
+#define I2C_PWREN_KEY_WIDTH		8U
+#define I2C_PWREN_KEY_VAL_UNLOCK	((uint32_t)0x00000026U)
+#define I2C_PWREN_KEY_VAL_LOCK		((uint32_t)0x00000000U)
+
+// NOTE: --- I2C_RSTCTL bitfields ---
+
+#define I2C_RSTCTL_RESETASSERT		0U
+#define I2C_RSTCTL_RESETASSERT_WIDTH	1U
+
+#define I2C_RSTCTL_RESETSTKYCLR		1U
+#define I2C_RSTCTL_RESETSTKYCLR_WIDTH	1U
+
+#define I2C_RSTCTL_KEY			24U
+#define I2C_RSTCTL_KEY_WIDTH		8U
+#define I2C_RSTCTL_KEY_VAL_UNLOCK	((uint32_t)0x000000B1U)
+#define I2C_RSTCTL_KEY_VAL_LOCK		((uint32_t)0x00000000U)
+
+// NOTE: --- I2C_STAT0 bitfields ---
+
+#define I2C_STAT0_RESETSTKY		16U
+#define I2C_STAT0_RESETSTKY_WIDTH	1U
+
+// NOTE: --- I2C_CLKSEL bitfields ---
+
+#define I2C_CLKSEL_MFCLK_SEL		2U
+#define I2C_CLKSEL_MFCLK_SEL_WIDTH	1U
+
+#define I2C_CLKSEL_BUSCLK_SEL		3U
+#define I2C_CLKSEL_BUSCLK_SEL_WIDTH	1U
+
+// NOTE: --- I2C_CLKDIV bitfields ---
+
+#define I2C_CLKDIV_RATIO		0U
+#define I2C_CLKDIV_RATIO_WIDTH		3U
+#define I2C_CLKDIV_RATIO_VAL_DIVNONE	((uint32_t)0x00000000U)
+#define I2C_CLKDIV_RATIO_VAL_DIV2	((uint32_t)0x00000001U)
+#define I2C_CLKDIV_RATIO_VAL_DIV3	((uint32_t)0x00000002U)
+#define I2C_CLKDIV_RATIO_VAL_DIV4	((uint32_t)0x00000003U)
+#define I2C_CLKDIV_RATIO_VAL_DIV5	((uint32_t)0x00000004U)
+#define I2C_CLKDIV_RATIO_VAL_DIV6	((uint32_t)0x00000005U)
+#define I2C_CLKDIV_RATIO_VAL_DIV7	((uint32_t)0x00000006U)
+#define I2C_CLKDIV_RATIO_VAL_DIV8	((uint32_t)0x00000007U)
+
+// NOTE: --- SPI_GFCTL bitfields ---
+
+#define I2C_GFCTL_DGFSEL		0U
+#define I2C_GFCTL_DGFSEL_WIDTH		3U
+#define I2C_GFCTL_DGFSEL_VAL_BYPASS	((uint32_t)0x00000000U)
+#define I2C_GFCTL_DGFSEL_VAL_1CLK	((uint32_t)0x00000001U)
+#define I2C_GFCTL_DGFSEL_VAL_2CLK	((uint32_t)0x00000002U)
+#define I2C_GFCTL_DGFSEL_VAL_3CLK	((uint32_t)0x00000003U)
+#define I2C_GFCTL_DGFSEL_VAL_4CLK	((uint32_t)0x00000004U)
+#define I2C_GFCTL_DGFSEL_VAL_8CLK	((uint32_t)0x00000005U)
+#define I2C_GFCTL_DGFSEL_VAL_16CLK	((uint32_t)0x00000006U)
+#define I2C_GFCTL_DGFSEL_VAL_31CLK	((uint32_t)0x00000007U)
+
+#define I2C_GFCTL_AGFEN			8U
+#define I2C_GFCTL_AGFEN_WIDTH		1U
+
+#define I2C_GFCTL_AGFSEL		9U
+#define I2C_GFCTL_AGFSEL_WIDTH		2U
+#define I2C_GFCTL_AGFSEL_VAL_5NS_FILT	((uint32_t)0x00000000U)
+#define I2C_GFCTL_AGFSEL_VAL_10NS_FILT	((uint32_t)0x00000001U)
+#define I2C_GFCTL_AGFSEL_VAL_25NS_FILT	((uint32_t)0x00000002U)
+#define I2C_GFCTL_AGFSEL_VAL_50NS_FILT	((uint32_t)0x00000003U)
+
+#define I2C_GFCTL_CHAIN			11U
+#define I2C_GFCTL_CHAIN_WIDTH		1U
+
+// NOTE: --- SPI_CTPR bitfields ---
+
+#define I2C_CTPR_TPR			0U
+#define I2C_CTPR_TPR_WIDTH		7U
 
 // NOTE: --- I2C_CSA bitfields ---
 
