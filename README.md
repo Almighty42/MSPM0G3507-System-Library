@@ -20,7 +20,7 @@ Bare-metal C drivers for the TI MSPM0G3507 (Arm Cortex-M0+), written at register
 ## Quick start
 
 ```sh
-git clone [https://github.com/Almighty42/MSPM0G3507-System-Library.git](https://github.com/Almighty42/MSPM0G3507-System-Library.git)
+git clone https://github.com/Almighty42/MSPM0G3507-System-Library.git
 cd MSPM0G3507-System-Library
 cmake -B build
 cmake --build build
